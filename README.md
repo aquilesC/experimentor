@@ -4,5 +4,5 @@ This project will control the Pharos Setup at Utrecht University.
 
 ## Goals ##
 
-    1. [] Goal 1
-    2. [] Goal 2
+1. [X] Goal 1
+2. [ ] Goal 2
