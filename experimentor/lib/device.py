@@ -1,5 +1,16 @@
+"""
+device.py
+=========
+Devices are connected to the computer. They control sensors and actuators. A device has to be able to set and read
+values.
+Setting complex devices such as a laser would require to define it as a device and its properties as sensors or
+actuators respectively.
+
+"""
 import importlib
 from lantz import Q_
+
+
 
 class device(object):
     def __init__(self, properties):
