@@ -14,14 +14,14 @@ class sensor:
         self.name = properties['name']
         self.properties = properties
 
-    def add_driver(self, driver):
+    def add_device(self, device):
         """ Adds the driver to the current sensor. In this context a driver is a class able to read the value from the
         device.
         """
-        self.driver = driver
+        self.device = device
 
     def get_value(self):
-        self.driver.read(self.properties)
+        self.device.read(self.properties)
 
     def __str__(self):
         return self.name
