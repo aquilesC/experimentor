@@ -1,7 +1,7 @@
 Experimentor
 ============
 
-** A flexible package for experiment control and automation **
+**A flexible package for experiment control and automation**
 
 Experimentor is a Python package aimed at simplifying the task of controlling experiments in various fields. The starting point of the development was a nano photonics setup and therefore the examples and the bulk of the code makes references to optical microscopes, but by no means this project is limited to them.
 
