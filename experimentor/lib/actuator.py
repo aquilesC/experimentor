@@ -14,11 +14,10 @@ class actuator:
         self.properties = properties
 
     def add_driver(self, driver):
-        self.driver = driver
+        self.device = driver
 
     def set_value(self, value):
         try:
-            self.driver.set_value(self.properties, value)
             return value
         except:
             return False
@@ -27,4 +26,4 @@ class actuator:
         """ Sets the actuator to make a ramp if it is in its capabilities.
         Properties established all the properties that are needed for the ramp.
         """
-        self.driver.make_ramp(self.properties, ramp_properties)
+        self.device.make_ramp(self.properties, ramp_properties)

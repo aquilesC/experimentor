@@ -8,11 +8,10 @@ actuators respectively.
 
 """
 import importlib
-from lantz import Q_
+from .. import Q_
 
 
-
-class device(object):
+class Device:
     def __init__(self, properties):
         self.properties = properties
         self.driver = None
@@ -26,6 +25,13 @@ class device(object):
         self.driver = driver
 
     def initialize_driver(self):
+        """ Initializes the driver.
+        There are 4 types of possible connections:
+        - GPIB
+        - USB
+        - serial
+        - daq
+        The first 3 are based on Lantz and its initialization routine, while daq was inherited from previous code and has a different initialization."""
         if 'driver' in self.properties:
             d = self.properties['driver'].split('/')
             driver_class = getattr(importlib.import_module(d[0]), d[1])
@@ -47,7 +53,6 @@ class device(object):
                     raise Warning('This was never tested!')
                 elif connection_type == 'daq':
                     self.driver = driver_class(self.properties['connection']['port'])
-
 
     def apply_values(self, values):
         """ Iterates over all values of a dictionary and sets the values of the driver to it.
@@ -73,15 +78,10 @@ class device(object):
     def get_params(self):
         return self.params
 
+
+
     def __str__(self):
         if 'name' in self.properties:
             return self.properties['name']
         else:
             return "Device with no name"
-
-if __name__ == "__main__":
-    from pharos.model.lib.general_functions import from_yaml_to_devices
-
-    d = from_yaml_to_devices('../../config/devices.yml', name='dummy daq')[0]
-    d.initialize_driver()
-    print(d)
