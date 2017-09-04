@@ -1,0 +1,45 @@
+%YAML 1.2
+---
+# Configures the steps of an experiment
+
+
+init:
+  devices: 'config/devices.yml'
+
+monitor:
+  laser:
+    name: Santec Laser
+    params:
+      start_wavelength: 1491 nm
+      stop_wavelength:  1510 nm
+      wavelength_speed:  10 nm/s
+      interval_trigger: 0.01 nm
+      sweep_mode: ContOne
+      wavelength_sweeps: 1
+  detectors:
+  - Photodiode Test
+  - Photodiode 2
+    
+scan:
+  laser:
+    name: Santec Laser
+    params:
+      start_wavelength: 1492 nm
+      stop_wavelength:  1548 nm
+      wavelength_speed:  50 nm/s
+      interval_trigger: 0.01 nm
+      sweep_mode: ContOne
+      wavelength_sweeps: 1
+  axis:  # The laser doesn't need to appear here, it is always considered the first axis of the scan
+    device:
+      name: Stage 1
+      range: [10um, 20um, 100nm]
+  detectors:
+    - Photodiode Test
+    - Photodiode 2
+
+
+
+finish:
+  TSL-10:
+    shutter: False

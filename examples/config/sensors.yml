@@ -1,0 +1,36 @@
+# Sensors used in the experiment. They have to be grouped by the device to which they are connected.
+
+# NI card. Every sensor has to specify also a port, description, units, etc.
+NI-DAQ:
+  Photodiode 1:
+    port: 1
+    type: analog
+    mode: input
+    description: Forward Intensity
+    calibration:
+      units: V # Target units, starting from volts. The calibration thus would be: device_value (true units) = slope*volts+offset
+      slope: 1
+      offset: 0
+    limits:
+      min: -10.0
+      max: 10
+  Photodiode 2:
+    port: 1
+    type: analog
+    mode: input
+    description: Forward Intensity
+    calibration:
+      units: V # Target units, starting from volts. The calibration thus would be: device_value (true units) = slope*volts+offset
+      slope: 1
+      offset: 0
+    limits:
+      min: -10.0
+      max: 10
+
+# When the device is connected to the serial or USB ports, specifying which properties are sensors make it easier to
+# setup a GUI or to monitor values that are provided by the device itself. No need to write them ALL down, just the ones
+# relevants for the experiment.
+TSL-710:
+  - wavelength
+  - power
+

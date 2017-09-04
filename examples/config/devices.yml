@@ -1,0 +1,63 @@
+# Define and Configure the devices relevant to the experiment. Devices are only the ones communicating with a computer.
+# For example an oscilloscope is a device. A photodiode connected to an oscilloscope is a sensor, a piezo stage connected
+# to a DAQ card is an actuator.
+# The Main key of the device has to be unique. As you can see with the two oscilloscopes, they have the same name, but
+# Their main key is different and the notes are different.
+# Whatever parameter is added, will be saved in the metadata. Therefore, even if maybe not relevant to the experiment,
+# it can be useful for traceability. As an example: the Santec laser does not need to have the model defined for it to
+# work, but it can be useful to store that information. There can also be notes, for example see the oscilloscope.
+
+TSL-710:
+  type: scan laser
+  name: Santec Laser
+  driver: controller.santec.tsl710/tsl710 # last one is the name of the class inside the file.
+  model: TSL-710
+  connection:
+    type: GPIB
+    port: 1
+  defaults: config/devices_defaults.yml #setting defaults will trigger an action after initializing each device with model/lib/device.py class
+
+NI-DAQ:
+  name: NI-DAQ
+  type: daq
+  model: ni
+  number: 2
+  driver: pharos.model.daq.ni/ni
+  connection:
+    type: daq
+    port: 2
+  trigger: external
+  trigger_source: PFI0
+
+oscilloscope:
+  type: daq
+  driver: model.daq.keysight
+  name: Keysight oscilloscope
+  connection:
+    type: USB
+    port: 1
+  notes: The port number 2 of this oscilloscope doesn't work. I was using the oscilloscope labeled as OSC2.
+
+oscilloscope 2:
+  type: daq
+  driver: model.daq.keysight
+  name: Keysight oscilloscope
+  connection:
+    type: USB
+    port: 2
+  notes: This oscilloscope works fine.
+
+DummyDaq:
+  type: daq
+  name: dummy daq
+  driver: pharos.model.daq.daqDummy/dummyDaq
+  connection:
+    type: daq
+    port: 1
+  defaults: config/devices_defaults.yml
+  trigger: external
+  trigger_source: PFI0
+
+
+
+

@@ -1,0 +1,30 @@
+# Actuators used in the experiment. They have to be grouped by the device to which they are connected.
+
+NI-DAQ:
+  Stage 1:
+    port: 1
+    type: analog
+    mode: output
+    description: Example analog Out
+    calibration:
+      units: um  # Target units, starting from volts. The calibration thus would be: device_value (true units) = slope*volts+offset
+      slope: 1
+      offset: 0
+    limits:
+      min: 0um
+      max: 10um
+
+# When working with devices connected through the serial or USB ports, defining actuators here simplify the tasks of building
+# a GUI. Specifying limits here is useful for downstream code, and if the range is smaller than what the device actually
+# supports it will be a limiting factor. However, there is low level control over which limits can or not be passed ot the
+# real device. See the drivers folder for this.
+
+TSL-710:
+  wavelength:
+    limits: [1490nm, 1600nm]
+  power:
+    limits: [0mW, 5mW]
+  start_wavelength:
+    limits: [1490nm, 1600nm]
+  stop_wavelength:
+    limits: [1490nm, 1600nm]

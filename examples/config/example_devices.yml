@@ -1,0 +1,82 @@
+%YAML 1.2
+---
+# Define and Configure the devices relevant to the experiment
+# It is important that devices are named differently
+
+
+PhotoDiode1: #example of an input voltage device connected to the DAQ card, this is called auxillary connection
+  name: Photodiode1
+  port: 1
+  type: analog
+  mode: input
+  description: Forward Intensity
+  calibration: # the multiplication factor/offset that converts voltages to whatever physical quantity that is measured
+    units: V
+    slope: 1
+    offset: 0
+  limits:
+    min: -2.5
+    max: 2.5
+  connection:
+    type: daq
+    device: NI-DAQ
+
+PhotoDiode2:
+  name: Photodiode2
+  port: 0
+  type: analog
+  mode: input
+  description: Forward Intensity
+  calibration:
+    units: V
+    slope: 1
+    offset: 0
+  limits:
+    min: -2.5
+    max: 2.5
+  connection:
+    type: daq
+    device: NI-DAQ
+
+WaveGen:
+  name: WaveGen
+  type: analog
+  mode: output
+  description: X Direction
+  port: 0
+  calibration: # Convert Volts into device units
+    units: V
+    slope: 1
+    offset: 0
+  limits:
+    min: -10
+    max: 10
+  connection:
+    type: daq
+    device: NI-DAQ
+
+NI-DAQ: #This is example for a directly connected device. They need explicit drivers and all terms defined here should match the definitions in the driver class
+  name: NI-DAQ #must be the same as the connection device for auxillary devices in this file
+  type: daq
+  model: ni
+  number: 3
+  driver: pharos.model.daq.ni/ni
+  connection:
+    type: daq
+    port: 3
+  trigger: internal
+  trigger_source: PFI0
+#
+#oscilloscope:
+#  type: daq
+#  driver: model.daq.keysight
+#  name: Keysight oscilloscope
+#  connection:
+#    type: USB  #for seeing/defining list of available types, see the translator model/lib/device.py
+#    port: 1
+
+
+
+
+
+

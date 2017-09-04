@@ -1,0 +1,20 @@
+%YAML 1.2
+---
+# Configures the steps of an experiment
+
+init:  # this are the actions necessary before any measurements can be set up, think of connecting to hardware or initializing camera
+#  devices: 'config/example_devices.yml'
+
+GenWaveDetect:
+  axis:  # The laser doesn't need to appear here, it is always considered the first axis of the scan
+    WaveGen:
+      default: 0 V
+      range: [-1 V, 1 V, 1 mV] # here the units can be set according to Q_ package standards
+      timestep: 1 ms
+  inputs:
+    detectors:
+      - Photodiode1
+      - Photodiode2
+    conditions:
+      timestep: 2 ms
+      points: 1000
