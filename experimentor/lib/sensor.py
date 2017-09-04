@@ -6,13 +6,14 @@ Sensors are all devices that are able to get a value from the experiment. For ex
 """
 
 
-class sensor:
+class Sensor:
     def __init__(self, properties):
         """Sensor class defined by a given set of properties.
         The only mandatory field is the name.
         """
         self.name = properties['name']
         self.properties = properties
+        self.connection = self.properties['connection']
 
     def add_device(self, device):
         """ Adds the driver to the current sensor. In this context a driver is a class able to read the value from the

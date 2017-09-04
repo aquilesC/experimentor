@@ -1,16 +1,28 @@
+"""
+    laser_scan
+    ==========
+    Class for controlling the Pharos setup. Everything revolves around triggering the scan of a laser and acquiring
+    signals of different devices via an NI-DAQ card.
+    Ultimately it should also be able to change values of serial devices.
 
+"""
 
 import numpy as np
 from time import sleep
+from .base_experiment import Experiment
+
 from lantz import Q_
 from pharos.model.lib.general_functions import from_yaml_to_devices, from_yaml_to_dict
 
 
-class measurement(object):
+class LaserScan(Experiment):
     def __init__(self, measure):
         """Measurement class that will hold all the information regarding the experiment being performed.
         :param measure: a dictionary with the necessary steps
         """
+        super(LaserScan, self).__init__(self)
+
+
         self.measure = measure  # Dictionary of the measurement steps
         self.devices = {}  # Dictionary holding all the devices
         self.daqs = {}  # Dictionary that holds for each daq the inputs and outputs.
@@ -20,19 +32,7 @@ class measurement(object):
             setattr(self, d, self.measure[d])
 
 
-    def load_devices(self, source=None):
-        """ Loads the devices from the files defined in the INIT part of the yml.
-        :param source: Not implemented yet.
-        :return:
-        """
-        if source is not None:
-            return
-        init = self.measure['init']
-        devices_file = init['devices']
-        devices_list = from_yaml_to_devices(devices_file)
-        for dev in devices_list:
-            self.devices[dev.properties['name']] = dev
-            print('Added %s to the experiment' % dev)
+
 
     def initialize_devices(self):
         """ Initializes the devices first by loading the driver,

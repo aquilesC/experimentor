@@ -5,7 +5,7 @@ Actuators are all the devices able to modify the experiment. For example a piezo
 """
 
 
-class actuator:
+class Actuator:
     def __init__(self, properties):
         """Sensor class defined by a given set of properties.
         The only mandatory field is the name.
