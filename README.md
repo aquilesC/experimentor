@@ -1,6 +1,6 @@
-# Pharos Controller v0.0 #
+# Experimentor v0.1 #
 
-This project will control the Pharos Setup at Utrecht University.
+Package for developing control and automation software in research labs.
 
 ## Goals ##
 

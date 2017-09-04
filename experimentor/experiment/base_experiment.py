@@ -9,6 +9,7 @@ from ..lib.device import Device
 from ..lib.actuator import Actuator
 from ..lib.sensor import Sensor
 
+
 class Experiment(object):
     def __init__(self):
         self.devices = {}
@@ -57,20 +58,34 @@ class Experiment(object):
             if not sens in self.sensors:
                 self.sensors[sens] = Sensor(sensors_dict[sens])
 
-    def group_sensor_by_device(self):
+    def get_sensors_from_device(self, device):
+        """ Returns a list of of names of the sensors connected to a specific device.
+        :param device: name of the device to look for
+        :return: List of names
+        :vartype device: str
         """
-        Groups the sensors by the device to which they are plugged.
-        :return: Dictionary of devices => list of sensors
-        """
-        devices = {}
-        for dev in self.devices:
-            devices[dev] = []
-            for sens in self.sensors:
-                if self.sensors[sens].connection['device'] == dev:
-                    devices[dev].append(sens)
+        sensors = []
+        for sens in self.sensors:
+            if self.sensors[sens].connection['device'] == device:
+                sensors.append(sens)
+        return sensors
+
+    def get_actuators_from_device(self, device):
+        """ Returns a list of names of the sensors connected to a specific device.
+        :param device: name of the device to look for.
+        :return: List of names
+         :vartype device: str"""
+        actuators = []
+        for act in self.actuators:
+            if self.actuators[act].connection['device'] == device:
+                actuators.append(act)
+        return actuators
+
+
 
 
     def initalize(self):
         pass
 
     def finalize(self):
+        pass
