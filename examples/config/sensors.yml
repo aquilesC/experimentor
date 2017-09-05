@@ -1,11 +1,12 @@
-# Sensors used in the experiment. They have to be grouped by the device to which they are connected.
+# Sensors used in the experiment. They have to be grouped by the device to which they are connected. The name does need
+# to be unique only within a device, not overall. For example, you can see that there are two photodiodes with the same
+# name, but one connected to the NI-DAQ and one to the oscilloscope.
 
 # NI card. Every sensor has to specify also a port, description, units, etc.
 NI-DAQ:
   Photodiode 1:
     port: 1
     type: analog
-    mode: input
     description: Forward Intensity
     calibration:
       units: V # Target units, starting from volts. The calibration thus would be: device_value (true units) = slope*volts+offset
@@ -17,7 +18,6 @@ NI-DAQ:
   Photodiode 2:
     port: 1
     type: analog
-    mode: input
     description: Forward Intensity
     calibration:
       units: V # Target units, starting from volts. The calibration thus would be: device_value (true units) = slope*volts+offset
@@ -33,4 +33,11 @@ NI-DAQ:
 TSL-710:
   - wavelength
   - power
+
+# There can be another ADQ device, such as an oscilloscope
+oscilloscope:
+  Photodiode 1:
+    port: 1
+    type: analog
+    description: Photodiode connected to oscilloscope
 

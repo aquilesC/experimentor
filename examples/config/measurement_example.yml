@@ -24,7 +24,7 @@ monitor:
     
 scan:
   laser:
-    name: Santec Laser
+    name: TSL-710
     params:
       start_wavelength: 1492 nm
       stop_wavelength:  1548 nm
@@ -37,8 +37,11 @@ scan:
       name: Stage 1
       range: [10um, 20um, 100nm]
   detectors:
-    - Photodiode Test
-    - Photodiode 2
+    NI-DAQ:
+      - Photodiode 1
+      - Photodiode 2
+    oscilloscope:
+      - Photodiode 1
 
 
 

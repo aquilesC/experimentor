@@ -26,77 +26,22 @@ class LaserScan(Experiment):
         for d in self.measure:
             setattr(self, d, self.measure[d])
 
-    def initialize_devices(self):
-        """ Initializes the devices first by loading the driver,
-        then by applying the default values if they are present.
-        :return:
-        """
-        # Load the file of devices
-        devices_file = self.init['devices']
-        devices_dict = from_yaml_to_dict(devices_file)
-        self.load_devices(devices_dict)
-        actuators_file = self.init['actuators']
-        actuators_dict = from_yaml_to_dict(actuators_file)
-        self.load_actuators(actuators_dict)
-        sensors_file = self.init['sensors']
-        sensors_dict = from_yaml_to_dict(sensors_file)
-        self.load_sensors(sensors_dict)
-
-        for k in self.devices:
-            dev = self.devices[k]
-            print('Starting %s' % k)
-            try:
-                dev.initialize_driver()
-            except:
-                print('Error initializing %s' % k)
-            if 'defaults' in dev.properties:
-                defaults_file = dev.properties['defaults']
-                defaults = from_yaml_to_dict(defaults_file)[dev.properties['name']]
-                dev.apply_values(defaults)
-
-    def connect_all_devices_to_daq(self):
-        """ Iterates through the devices and appends the outputs and inputs to each daq.
-        :return: None
-        """
-        for d in self.devices:
-            dev = self.devices[d]  # Get the device from the devices list
-            if 'device' in dev.properties['connection']:
-                connected_to = dev.properties['connection']['device']
-                mode = dev.properties['mode']
-                self.daqs[connected_to][mode].append(dev)
-                print('Appended %s to %s' % (dev, connected_to))
-
-    def connect_monitor_devices_to_daq(self):
-        """ Connects only the devices to be monitored to the appropriate daq
-        :return:
-        """
-        scan = self.measure['scan']
-        devices_to_monitor = scan['detectors']
-
-        # Clear the DAQS just in case is a second scan running
-        for d in self.daqs:
-            self.daqs[d]['monitor'] = []
-
-        for d in devices_to_monitor:
-            dev = self.devices[d]
-            self.daqs[dev.properties['connection']['device']]['monitor'].append(dev)
 
     def setup_scan(self):
         """ Prepares the scan by setting all the parameters to the DAQs and laser.
         ALL THIS IS WORK IN PROGRESS, THAT WORKS WITH VERY SPECIFIC SETUP CONDITIONS!
         :return:
         """
+
         scan = self.measure['scan']
         # First setup the laser
         laser_params = scan['laser']
         laser = self.devices[laser_params['name']]
-        try:
-            laser.apply_values(laser_params)
-        except:
-            print('Problem changing values of the laser')
+        laser.apply_values(laser_params)
 
         num_points = int(
             (laser.params['stop_wavelength'] - laser.params['start_wavelength']) / laser.params['trigger_step'])
+
         accuracy = laser.params['trigger_step'] / laser.params['wavelength_speed']
 
         conditions = {
@@ -104,9 +49,12 @@ class LaserScan(Experiment):
             'points': num_points
         }
 
-
-
         # Then setup the ADQs
+        for device in scan['detectors']:
+            daq = self.devices[device]
+            devs_to_monitor = scan['detectors'][device]
+            # TODO: Finish this!!
+
         for d in self.daqs:
             daq = self.daqs[d]  # Get the DAQ from the dictionary of daqs.
             daq_driver = self.devices[d]  # Gets the link to the DAQ
