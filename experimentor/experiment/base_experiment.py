@@ -15,6 +15,9 @@ class Experiment(object):
         self.devices = {}
         self.actuators = {}
         self.sensors = {}
+        self.loaded_devices = False
+        self.loaded_sensors = False
+        self.loaded_actuators = False
 
     def load_devices(self, devices_dict, source=None):
         """ Loads the devices from a dictionary.
@@ -22,13 +25,15 @@ class Experiment(object):
         :param source: Not implemented yet.
         """
         if source is not None:
-            return
+            return False
 
         for dev in devices_dict:
             # Check that the name of the device is not in the dictionary of devices
             if not dev in self.devices:
                 self.devices[dev] = Device(devices_dict[dev])
                 print('Added %s to the experiment'.format(dev))
+        self.loaded_devices = True
+        return True
 
     def load_actuators(self, actuators_dict, source=None):
         """
@@ -37,12 +42,14 @@ class Experiment(object):
         :param source: Not yet implemented.
         """
         if source is not None:
-            return
+            return False
 
         for act in actuators_dict:
             # Check that the actuator is not already defined
             if not act in self.actuators:
                 self.actuators[act] = Actuator(actuators_dict[act])
+        self.loaded_actuators = True
+        return True
 
     def load_sensors(self, sensors_dict, source=None):
         """
@@ -51,12 +58,14 @@ class Experiment(object):
         :param source: Not yet implemented
         """
         if source is not None:
-            return
+            return False
 
         for sens in sensors_dict:
             # Check that the sensor does not exist in the class yet
             if not sens in self.sensors:
                 self.sensors[sens] = Sensor(sensors_dict[sens])
+        self.loaded_sensors = True
+        return True
 
     def get_sensors_from_device(self, device):
         """ Returns a list of of names of the sensors connected to a specific device.

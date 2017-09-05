@@ -12,30 +12,26 @@ def from_yaml_to_devices(filename = "config/devices.yml", name=None):
     :param name: The name of the device to load
     :return: list of :class: device
     """
-
-    stream = open(filename, 'r')
-    devices = yaml.load(stream)
-    stream.close()
-    devs = []
-    for d in devices:
-        dev = devices[d]
-        if name is not None:
-            try:
-                if dev['name'] == name:
-                    dd = device(dev)
-                    devs.append(dd)
-            except:
-                pass
+    with open(filename, 'r') as stream:
+        devices = yaml.load(stream)
+    devs = {}
+    if name is not None:
+        if name in devices:
+            devs[name] = device(devices[name])
+            return devs
         else:
+            return None
+    else:
+        for d in devices:
+            dev = devices[d]
             dd = device(dev)
-            devs.append(dd)
+            devs[d] = dd
     return devs
 
 
 def from_yaml_to_dict(filename='config/measurement.yml'):
-    stream = open(filename, 'r')
-    output = yaml.load(stream)
-    stream.close()
+    with open(filename, 'r') as stream:
+        output = yaml.load(stream)
     return output
 
 

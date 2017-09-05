@@ -5,6 +5,8 @@
 
 init:
   devices: 'config/devices.yml'
+  sensors: 'config/sensors.yml'
+  actuators: 'config/actuators.yml'
 
 monitor:
   laser:

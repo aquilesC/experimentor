@@ -6,7 +6,6 @@
     Ultimately it should also be able to change values of serial devices.
 
 """
-
 import numpy as np
 from time import sleep
 from experimentor.experiment.base_experiment import Experiment
@@ -22,38 +21,38 @@ class LaserScan(Experiment):
         """
         super(LaserScan, self).__init__(self)
 
-
-        self.measure = measure  # Dictionary of the measurement steps
-        self.devices = {}  # Dictionary holding all the devices
-        self.daqs = {}  # Dictionary that holds for each daq the inputs and outputs.
-
+        self.dict_measure = measure  # Dictionary of the measurement steps
         # This short block is going to become useful in the future, when interfacing with a GUI
         for d in self.measure:
             setattr(self, d, self.measure[d])
-
-
-
 
     def initialize_devices(self):
         """ Initializes the devices first by loading the driver,
         then by applying the default values if they are present.
         :return:
         """
+        # Load the file of devices
+        devices_file = self.init['devices']
+        devices_dict = from_yaml_to_dict(devices_file)
+        self.load_devices(devices_dict)
+        actuators_file = self.init['actuators']
+        actuators_dict = from_yaml_to_dict(actuators_file)
+        self.load_actuators(actuators_dict)
+        sensors_file = self.init['sensors']
+        sensors_dict = from_yaml_to_dict(sensors_file)
+        self.load_sensors(sensors_dict)
+
         for k in self.devices:
             dev = self.devices[k]
-            print('Starting %s' % dev.properties['name'])
+            print('Starting %s' % k)
             try:
                 dev.initialize_driver()
             except:
-                print('Error initializing %s' % dev.properties['name'])
+                print('Error initializing %s' % k)
             if 'defaults' in dev.properties:
                 defaults_file = dev.properties['defaults']
                 defaults = from_yaml_to_dict(defaults_file)[dev.properties['name']]
                 dev.apply_values(defaults)
-            if dev.properties['type'] == 'daq':
-                self.daqs[dev.properties['name']] = {'input': [],
-                                                     'output': [],
-                                                     'monitor': [], }  # Creates an entry for every different DAQ.
 
     def connect_all_devices_to_daq(self):
         """ Iterates through the devices and appends the outputs and inputs to each daq.
