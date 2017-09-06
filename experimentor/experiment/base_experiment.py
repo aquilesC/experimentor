@@ -11,7 +11,7 @@ from ..lib.sensor import Sensor
 from ..lib.general_functions import from_yaml_to_dict
 
 class Experiment(object):
-    def __init__(self):
+    def __init__(self, measure):
         self.devices = {}
         self.actuators = {}
         self.sensors = {}
@@ -19,6 +19,11 @@ class Experiment(object):
         self.loaded_sensors = False
         self.loaded_actuators = False
 
+        self.dict_measure = measure  # Dictionary of the measurement steps
+        # This short block is going to become useful in the future, when interfacing with a GUI
+        for d in measure:
+            setattr(self, d, measure[d])
+            
     def load_devices(self, devices_dict, source=None):
         """ Loads the devices from a dictionary.
         :param devices_dict: Dictionary of devices.

@@ -19,12 +19,9 @@ class LaserScan(Experiment):
         """Measurement class that will hold all the information regarding the experiment being performed.
         :param measure: a dictionary with the necessary steps
         """
-        super(LaserScan, self).__init__()
+        super(LaserScan, self).__init__(measure)
 
-        self.dict_measure = measure  # Dictionary of the measurement steps
-        # This short block is going to become useful in the future, when interfacing with a GUI
-        for d in measure:
-            setattr(self, d, measure[d])
+
 
 
     def setup_scan(self):
