@@ -15,7 +15,7 @@ TSL-710:
   connection:
     type: GPIB
     port: 1
-  defaults: config/devices_defaults.yml #setting defaults will trigger an action after initializing each device with model/lib/device.py class
+ # defaults: config/devices_defaults.yml #setting defaults will trigger an action after initializing each device with model/lib/device.py class
 
 NI-DAQ:
   name: NI-DAQ
@@ -33,6 +33,8 @@ oscilloscope:
   type: daq
   driver: model.daq.keysight
   name: Keysight oscilloscope
+  trigger: external
+  trigger_source: 1 # This is only for example purposes!
   connection:
     type: USB
     port: 1

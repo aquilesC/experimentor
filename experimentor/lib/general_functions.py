@@ -3,7 +3,7 @@
 """
 import sys
 import yaml
-from pharos.model.lib.device import device
+from .device import Device
 from .logger_with_time import logger
 
 def from_yaml_to_devices(filename = "config/devices.yml", name=None):
@@ -17,14 +17,14 @@ def from_yaml_to_devices(filename = "config/devices.yml", name=None):
     devs = {}
     if name is not None:
         if name in devices:
-            devs[name] = device(devices[name])
+            devs[name] = Device(devices[name])
             return devs
         else:
             return None
     else:
         for d in devices:
             dev = devices[d]
-            dd = device(dev)
+            dd = Device(dev)
             devs[d] = dd
     return devs
 

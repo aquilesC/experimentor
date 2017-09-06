@@ -10,8 +10,8 @@ import numpy as np
 from time import sleep
 from experimentor.experiment.base_experiment import Experiment
 
-from lantz import Q_
-from pharos.model.lib.general_functions import from_yaml_to_devices, from_yaml_to_dict
+from experimentor import Q_
+from experimentor.lib.general_functions import from_yaml_to_dict
 
 
 class LaserScan(Experiment):
@@ -19,12 +19,12 @@ class LaserScan(Experiment):
         """Measurement class that will hold all the information regarding the experiment being performed.
         :param measure: a dictionary with the necessary steps
         """
-        super(LaserScan, self).__init__(self)
+        super(LaserScan, self).__init__()
 
         self.dict_measure = measure  # Dictionary of the measurement steps
         # This short block is going to become useful in the future, when interfacing with a GUI
-        for d in self.measure:
-            setattr(self, d, self.measure[d])
+        for d in measure:
+            setattr(self, d, measure[d])
 
 
     def setup_scan(self):
@@ -33,41 +33,43 @@ class LaserScan(Experiment):
         :return:
         """
 
-        scan = self.measure['scan']
         # First setup the laser
-        laser_params = scan['laser']
-        laser = self.devices[laser_params['name']]
+        laser_params = self.scan['laser']['params']
+        laser = self.devices[self.scan['laser']['name']]['dev']
         laser.apply_values(laser_params)
-
         num_points = int(
-            (laser.params['stop_wavelength'] - laser.params['start_wavelength']) / laser.params['trigger_step'])
+            (laser.params['stop_wavelength'] - laser.params['start_wavelength']) / laser.params['interval_trigger'])
 
-        accuracy = laser.params['trigger_step'] / laser.params['wavelength_speed']
+        # Estimated accuracy to set the DAQmx to.
+        accuracy = laser.params['interval_trigger'] / laser.params['wavelength_speed']
 
+        # Conditions to be passed to the DAQ.
         conditions = {
             'accuracy': accuracy,
             'points': num_points
         }
 
         # Then setup the ADQs
-        for device in scan['detectors']:
-            daq = self.devices[device]
-            devs_to_monitor = scan['detectors'][device]
+        for device in self.scan['detectors']:
+            daq = self.devices[device]['dev']
+            sens_to_monitor = self.scan['detectors'][device]
+            for sensor in sens_to_monitor:
+                if sensor not in daq
             # TODO: Finish this!!
 
-        for d in self.daqs:
-            daq = self.daqs[d]  # Get the DAQ from the dictionary of daqs.
-            daq_driver = self.devices[d]  # Gets the link to the DAQ
-            if len(daq['monitor']) > 0:
-                print('DAQ: %s' % d) 
-                devs_to_monitor = daq['monitor']  # daqs dictionary groups the channels by daq to which they are plugged
-                print('Devs to monitor:')
-                print(devs_to_monitor)
-                conditions['devices'] = devs_to_monitor
-                conditions['trigger'] = daq_driver.properties['trigger']
-                conditions['trigger_source'] = daq_driver.properties['trigger_source']
-                daq['monitor_task'] = daq_driver.driver.analog_input_setup(conditions)
-                self.daqs[d] = daq # Store it back to the class variable
+        # for d in self.daqs:
+        #     daq = self.daqs[d]  # Get the DAQ from the dictionary of daqs.
+        #     daq_driver = self.devices[d]  # Gets the link to the DAQ
+        #     if len(daq['monitor']) > 0:
+        #         print('DAQ: %s' % d)
+        #         devs_to_monitor = daq['monitor']  # daqs dictionary groups the channels by daq to which they are plugged
+        #         print('Devs to monitor:')
+        #         print(devs_to_monitor)
+        #         conditions['devices'] = devs_to_monitor
+        #         conditions['trigger'] = daq_driver.properties['trigger']
+        #         conditions['trigger_source'] = daq_driver.properties['trigger_source']
+        #         daq['monitor_task'] = daq_driver.driver.analog_input_setup(conditions)
+        #         self.daqs[d] = daq # Store it back to the class variable
 
     def do_scan(self):
         """ Does the scan considering that everything else was already set up.
@@ -261,6 +263,11 @@ class LaserScan(Experiment):
 
 
 if __name__ == "__main__":
-    config_experiment = "config/measurement.yml"
-    experiment_dict = from_yaml_to_dict(config_experiment)
-    experiment = measurement(experiment_dict)
+    import os
+    BASE_DIR = '/home/aquiles/Documents/Programs/Experimentor/examples/'
+    config_experiment = "config/measurement_example.yml"
+    experiment_dict = from_yaml_to_dict(os.path.join(BASE_DIR, config_experiment))
+    experiment = LaserScan(experiment_dict)
+    devices_file = "config/devices.yml"
+    experiment.load_devices(from_yaml_to_dict(os.path.join(BASE_DIR,devices_file)))
+    experiment.setup_scan()
