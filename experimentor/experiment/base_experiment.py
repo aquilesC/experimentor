@@ -10,6 +10,7 @@ from ..lib.actuator import Actuator
 from ..lib.sensor import Sensor
 from ..lib.general_functions import from_yaml_to_dict
 
+
 class Experiment(object):
     def __init__(self, measure):
         self.devices = {}
@@ -93,29 +94,6 @@ class Experiment(object):
                 self.devices[dev]['sensors'][sen] = Sensor(sen_data)
         self.loaded_sensors = True
         return True
-
-    def get_sensors_from_device(self, device):
-        """ Returns a list of of names of the sensors connected to a specific device.
-        :param device: name of the device to look for
-        :return: List of names
-        :vartype device: str
-        """
-        sensors = []
-        for sens in self.sensors:
-            if self.sensors[sens].connection['device'] == device:
-                sensors.append(sens)
-        return sensors
-
-    def get_actuators_from_device(self, device):
-        """ Returns a list of names of the sensors connected to a specific device.
-        :param device: name of the device to look for.
-        :return: List of names
-         :vartype device: str"""
-        actuators = []
-        for act in self.actuators:
-            if self.actuators[act].connection['device'] == device:
-                actuators.append(act)
-        return actuators
 
     def initialize_devices(self):
         """ Initializes the devices. It means that it will load the appropriate drivers and check if there are defaults

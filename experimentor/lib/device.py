@@ -6,6 +6,14 @@ values.
 Setting complex devices such as a laser would require to define it as a device and its properties as sensors or
 actuators respectively.
 
+.. warning::
+
+    If problems arise when adding new devices, tt is important to check :meth:initialize_driver .
+    It was hardcoded which parameters are passed when initializing each device type.
+
+.. todo::
+
+    Make flexible parameters when initializing the driver of the devices.
 """
 import importlib
 from .. import Q_
@@ -27,11 +35,15 @@ class Device:
     def initialize_driver(self):
         """ Initializes the driver.
         There are 4 types of possible connections:
+
         - GPIB
         - USB
         - serial
         - daq
-        The first 3 are based on Lantz and its initialization routine, while daq was inherited from previous code and has a different initialization."""
+
+        The first 3 are based on Lantz and its initialization routine, while daq was inherited from previous code and
+        has a different initialization routine."""
+
         if 'driver' in self.properties:
             d = self.properties['driver'].split('/')
             driver_class = getattr(importlib.import_module(d[0]), d[1])
