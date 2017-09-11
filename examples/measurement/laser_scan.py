@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
     laser_scan
     ==========
@@ -7,18 +8,22 @@
 
 """
 import numpy as np
+import logging
+
 from time import sleep
 from experimentor.experiment.base_experiment import Experiment
 
 from experimentor import Q_
 from experimentor.lib.general_functions import from_yaml_to_dict
 
+logger = logging.getLogger(__name__)
 
 class LaserScan(Experiment):
     def __init__(self, measure):
         """Measurement class that will hold all the information regarding the experiment being performed.
         :param measure: a dictionary with the necessary steps
         """
+        logger.info('Init Laser Scan')
         super(LaserScan, self).__init__(measure)
 
 
@@ -51,7 +56,8 @@ class LaserScan(Experiment):
             daq = self.devices[device]['dev']
             sens_to_monitor = self.scan['detectors'][device]
             for sensor in sens_to_monitor:
-                if sensor not in daq
+                if sensor not in daq:
+                    break
             # TODO: Finish this!!
 
         # for d in self.daqs:
@@ -260,10 +266,23 @@ class LaserScan(Experiment):
 
 
 if __name__ == "__main__":
+    import logging
+
+    logging.basicConfig(filename='example.log', level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    ch = logging.FileHandler('example.log')
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
+    logger.debug('This message should go to the log file')
+    logger.info('So should this')
+    logger.warning('And this, too')
+
     import os
     BASE_DIR = '/home/aquiles/Documents/Programs/Experimentor/examples/'
-    config_experiment = "config/measurement_example.yml"
-    experiment_dict = from_yaml_to_dict(os.path.join(BASE_DIR, config_experiment))
+    # config_experiment = "config/measurement_example.yml"
+    # experiment_dict = from_yaml_to_dict(os.path.join(BASE_DIR, config_experiment))
+    experiment_dict = ''
     experiment = LaserScan(experiment_dict)
     devices_file = "config/devices.yml"
     experiment.load_devices(from_yaml_to_dict(os.path.join(BASE_DIR,devices_file)))

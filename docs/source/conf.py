@@ -19,8 +19,8 @@
 #
 import os
 import sys
-# dir = os.path.dirname(__file__)
-# sys.path.insert(0, os.path.realpath(os.path.join(dir,'../../UUTrack')))
+dir = os.path.dirname(__file__)
+print(os.path.abspath('../../experimentor'))
 sys.path.insert(0, os.path.abspath('../../'))
 
 # -- General configuration ------------------------------------------------
@@ -32,7 +32,8 @@ sys.path.insert(0, os.path.abspath('../../'))
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinx.ext.coverage']
+extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinx.ext.coverage', 'sphinx.ext.autosummary']
+autosummary_generate = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

@@ -1,8 +1,14 @@
+# -*- coding: utf-8 -*-
 """
 actuator.py
 ===========
 Actuators are all the devices able to modify the experiment. For example a piezo stage is an actuator.
+The properties of the actuators are read-only; in principle one cannot change the port at which a specific sensor is plugged
+without re-generating the object.
 """
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class Actuator:
@@ -10,17 +16,35 @@ class Actuator:
         """Sensor class defined by a given set of properties.
         The only mandatory field is the name.
         """
+        if 'name' not in properties:
+            logger.error('Initializing sensor without name')
+            raise Exception('All sensors need a name')
         self.name = properties['name']
-        self.properties = properties
+        self._properties = properties
+        self._device = None
+        logger.info('Started actuator {}'.format(self.name))
 
-    def add_driver(self, driver):
-        self.device = driver
+    @property
+    def device(self):
+        return self._device
+
+    @device.setter
+    def device(self, driver):
+        if self._device is not None:
+            logger.error('Trying to override an actuator\'s device.')
+            raise Exception('Trying to override an actuator\'s device.')
+        else:
+            self._device = driver
 
     def set_value(self, value):
         try:
             return value
         except:
             return False
+
+    @property
+    def properties(self):
+        return self._properties
 
     def make_ramp(self, ramp_properties):
         """ Sets the actuator to make a ramp if it is in its capabilities.

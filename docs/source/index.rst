@@ -16,9 +16,9 @@ If you need further assistance with the installation of the code, please check :
 
 
 .. toctree::
-   :hidden:
    :maxdepth: 2
    :caption: Contents:
 
    python_working
    installing
+   lib.device
