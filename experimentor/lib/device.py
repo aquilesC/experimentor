@@ -1,25 +1,28 @@
 # -*- coding: utf-8 -*-
 """
-device.py
-=========
-Devices are connected to the computer. They control sensors and actuators. A device has to be able to set and read
-values.
-Setting complex devices such as a laser would require to define it as a device and its properties as sensors or
-actuators respectively.
+    device.py
+    =========
+    Devices are connected to the computer. They control sensors and actuators. A device has to be able to set and read
+    values.
+    Setting complex devices such as a laser would require to define it as a device and its properties as sensors or
+    actuators respectively.
 
-.. warning::
+    .. warning::
 
-    If problems arise when adding new devices, tt is important to check :meth:initialize_driver .
-    It was hardcoded which parameters are passed when initializing each device type.
+        If problems arise when adding new devices, tt is important to check :meth:initialize_driver .
+        It was hardcoded which parameters are passed when initializing each device type.
 
-.. todo::
+    .. todo::
 
-    Make flexible parameters when initializing the driver of the devices.
+        Make flexible parameters when initializing the driver of the devices.
+
+    .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
 """
 import logging
 import importlib
 from .. import Q_
-from . import Actuator
+from .actuator import Actuator
+from .sensor import Sensor
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +33,6 @@ class Device:
     properties, including the driver.
     Device has two properties, one called _properties that stores the initial properties passed to the device and is
     read-only. _params stores the parameters passed during execution; it doesn't store a history, just the latest one.
-
     """
     def __init__(self, properties):
         if 'name' in properties:
@@ -93,10 +95,15 @@ class Device:
                     logger.error('{} driver for {} not initialized'.format(connection_type, self._name))
                     raise Exception('Driver not initialized')
 
-
     def apply_values(self, values):
-        """ Iterates over all values of a dictionary and sets the values of the driver to it.
+        """ Iterates over all values of a dictionary and sets the values of the driver to it. It is kept for legacy support
+        but it is very important to switch to apply_value, passing an actuator.
+
+        .. warning:: This method can misbehave with the new standards of sensors and actuators in place since version 0.1.
+
         :param values: a dictionary of parameters and desired values for those parameters. The parameters should have units.
+
+        .. deprecated:: version 0.2
         """
         if self.driver is None:
             logger.error('Trying to apply values before initializing the driver')
@@ -122,23 +129,33 @@ class Device:
             logger.error('Drivers can only update dictionaries')
             raise Exception('Drivers can only update dictionaries')
 
-    @classmethod
-    def apply_value(cls, value):
-        """ Applies a given value to an actuator through the driver of the device.
-        :param cls: Class of type Actuator
-        :param value: A value to be set. Ideally a Quantity. Q_
+    def apply_value(self, actuator, value):
+        """ Applies a given value to an actuator through the driver of the device. It is only a relay function left here
+        to keep the hierarchical structure of the program, i.e. actuators communicate with devices, devices communicate
+        with models and models with drivers.
+
+        :param actuator: instance of Actuator
+        :param value: A value to be set. Ideally a Quantity.
         """
-        if not isinstance(cls, Actuator):
-            err_str = "Trying to update the value of {} and not of an Actuator".format(type(cls))
+        if not isinstance(actuator, Actuator):
+            err_str = "Trying to update the value of {} and not of an Actuator".format(type(actuator))
             logger.error(err_str)
             raise Exception(err_str)
-        if cls._device is None:
-            err_str = "(!)Trying to update a value of an Actuator without a deivce initialized. \
-                    This should have been checked at an actuator level."
+        if not isinstance(value, Q_):
+            logger.info("Passing value {} to {} and that is not a Quantity".format(value, actuator.name))
+
+        self.driver.apply_value(actuator, value)
+
+    def read_value(self, sensor):
+        """ Reads a value from a sensor. This method is just a relay to a model, in order to keep the structure of the
+        program tidy.
+        """
+        if not isinstance(sensor, Sensor):
+            err_str = "Trying to read the value of {} and not of a Sensor".format(type(sensor))
             logger.error(err_str)
             raise Exception(err_str)
 
-        cls._device.apply_value()
+        return self.driver.read_value(sensor)
 
 
     @property

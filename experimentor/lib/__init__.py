@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
  experimentor.lib
  ================
@@ -8,3 +10,4 @@
 from .device import Device
 from .actuator import Actuator
 from .sensor import Sensor
+from .general_functions import *

@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+    logger_with_time
+    ================
+    Workaround for implementing a logging strategy both with saving to file and with output with time for packages and
+    scripts that use a lot of print and not use the logging package.
+    Since version 0.2 of Experimentor, the logging was implemented almost everywhere.
+
+    .. depectrated:: v0.2
+
+    .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
+"""
 import sys
 import datetime
 

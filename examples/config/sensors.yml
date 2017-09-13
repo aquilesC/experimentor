@@ -13,8 +13,8 @@ NI-DAQ:
       slope: 1
       offset: 0
     limits:
-      min: -10.0
-      max: 10
+      min: -10.0V
+      max: 10V
   Photodiode 2:
     port: 1
     type: analog
@@ -24,8 +24,8 @@ NI-DAQ:
       slope: 1
       offset: 0
     limits:
-      min: -10.0
-      max: 10
+      min: -10.0V
+      max: 10V
 
 # When the device is connected to the serial or USB ports, specifying which properties are sensors make it easier to
 # setup a GUI or to monitor values that are provided by the device itself. No need to write them ALL down, just the ones
