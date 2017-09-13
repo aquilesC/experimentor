@@ -19,11 +19,19 @@ actuators respectively.
 import logging
 import importlib
 from .. import Q_
+from . import Actuator
 
 logger = logging.getLogger(__name__)
 
 
 class Device:
+    """
+    Device is responsible for the communication with real devices. Device takes only one argument, a dictionary of
+    properties, including the driver.
+    Device has two properties, one called _properties that stores the initial properties passed to the device and is
+    read-only. _params stores the parameters passed during execution; it doesn't store a history, just the latest one.
+
+    """
     def __init__(self, properties):
         if 'name' in properties:
             logger.debug('Loaded properties of {}'.format(properties['name']))
@@ -32,7 +40,7 @@ class Device:
             logger.debug('Loaded properties of device without name')
             self._name = 'nameless'
 
-        self.properties = properties
+        self._properties = properties
         self.driver = None
         self._params = {}
 
@@ -56,16 +64,16 @@ class Device:
         The first 3 are based on Lantz and its initialization routine, while daq was inherited from previous code and
         has a different initialization routine."""
 
-        if 'driver' in self.properties:
-            d = self.properties['driver'].split('/')
+        if 'driver' in self._properties:
+            d = self._properties['driver'].split('/')
             driver_class = getattr(importlib.import_module(d[0]), d[1])
-            if 'connection' in self.properties:
-                connection_type = self.properties['connection']['type']
+            if 'connection' in self._properties:
+                connection_type = self._properties['connection']['type']
                 logger.debug('Initializing {} connection'.format(connection_type))
                 try:
                     if connection_type == 'GPIB':
                         # Assume it is a lantz driver
-                        self.driver = driver_class.via_gpib(self.properties['connection']['port'])
+                        self.driver = driver_class.via_gpib(self._properties['connection']['port'])
                         self.driver.initialize()
                     elif connection_type == 'USB':
                         # Assume it is a lantz driver
@@ -75,15 +83,16 @@ class Device:
                         raise Warning('This was never tested!')
                     elif connection_type == 'serial':
                         # Assume it is a lantz driver
-                        self.driver = driver_class.via_serial(self.properties['connection']['port'])
+                        self.driver = driver_class.via_serial(self._properties['connection']['port'])
                         self.driver.initialize()
                         logger.warning('Connection {} was never tested.'.format(connection_type))
                         raise Warning('This was never tested!')
                     elif connection_type == 'daq':
-                        self.driver = driver_class(self.properties['connection']['port'])
+                        self.driver = driver_class(self._properties['connection']['port'])
                 except:
                     logger.error('{} driver for {} not initialized'.format(connection_type, self._name))
                     raise Exception('Driver not initialized')
+
 
     def apply_values(self, values):
         """ Iterates over all values of a dictionary and sets the values of the driver to it.
@@ -113,9 +122,32 @@ class Device:
             logger.error('Drivers can only update dictionaries')
             raise Exception('Drivers can only update dictionaries')
 
+    @classmethod
+    def apply_value(cls, value):
+        """ Applies a given value to an actuator through the driver of the device.
+        :param cls: Class of type Actuator
+        :param value: A value to be set. Ideally a Quantity. Q_
+        """
+        if not isinstance(cls, Actuator):
+            err_str = "Trying to update the value of {} and not of an Actuator".format(type(cls))
+            logger.error(err_str)
+            raise Exception(err_str)
+        if cls._device is None:
+            err_str = "(!)Trying to update a value of an Actuator without a deivce initialized. \
+                    This should have been checked at an actuator level."
+            logger.error(err_str)
+            raise Exception(err_str)
+
+        cls._device.apply_value()
+
+
     @property
     def params(self):
         return self._params
+
+    @property
+    def properties(self):
+        return self._properties
 
     def __str__(self):
         return self._name
