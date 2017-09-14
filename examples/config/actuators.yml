@@ -13,6 +13,7 @@ NI-DAQ:
     limits:
       min: 0um
       max: 10um
+    default: 5um
 
 # When working with devices connected through the serial or USB ports, defining actuators here simplify the tasks of building
 # a GUI. Specifying limits here is useful for downstream code, and if the range is smaller than what the device actually
@@ -21,10 +22,20 @@ NI-DAQ:
 
 TSL-710:
   wavelength:
-    limits: [1490nm, 1600nm]
+    limits:
+      min: 1490nm
+      max: 1600nm
+    default: 1500nm
   power:
-    limits: [0mW, 5mW]
+    limits:
+      min: 0mW
+      max: 5mW
+    default: 0mW
   start_wavelength:
-    limits: [1490nm, 1600nm]
+    limits:
+      min: 1490nm
+      max: 1600nm
   stop_wavelength:
-    limits: [1490nm, 1600nm]
+    limits:
+      min: 1490nm
+      max: 1600nm

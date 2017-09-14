@@ -19,8 +19,9 @@ monitor:
       sweep_mode: ContOne
       wavelength_sweeps: 1
   detectors:
-  - Photodiode Test
-  - Photodiode 2
+    NI-DAQ:
+      - Photodiode Test
+      - Photodiode 2
     
 scan:
   laser:
@@ -33,16 +34,13 @@ scan:
       sweep_mode: ContOne
       wavelength_sweeps: 1
   axis:  # The laser doesn't need to appear here, it is always considered the first axis of the scan
-    device:
-      name: Stage 1
-      range: [10um, 20um, 100nm]
+    NI-DAQ:
+      Stage 1:
+        range: [10um, 20um, 100nm]
   detectors:
     NI-DAQ:
       - Photodiode 1
       - Photodiode 2
-    oscilloscope:
-      - Photodiode 1
-
 
 
 finish:

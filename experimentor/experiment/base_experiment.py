@@ -7,10 +7,15 @@
 
     .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
 """
+import logging
+
+from .. import Q_
 from ..lib.device import Device
 from ..lib.actuator import Actuator
 from ..lib.sensor import Sensor
 from ..lib.general_functions import from_yaml_to_dict
+
+logger = logging.getLogger(__name__)
 
 
 class Experiment(object):
@@ -26,6 +31,10 @@ class Experiment(object):
         # This short block is going to become useful in the future, when interfacing with a GUI
         for d in measure:
             setattr(self, d, measure[d])
+
+        print(__name__)
+        self.logger = logging.getLogger(__name__)
+        self.logger.info('creating an instance of Auxiliary')
             
     def load_devices(self, devices_dict, source=None):
         """ Loads the devices from a dictionary.
@@ -41,7 +50,13 @@ class Experiment(object):
                 self.devices[dev] = {'dev': Device(devices_dict[dev]),
                                      'actuators': {},
                                      'sensors': {}}
-                print('Added {} to the experiment'.format(dev))
+                self.logger.debug('Added {} to the experiment'.format(dev))
+                if 'driver' in devices_dict[dev]:
+                    self.devices[dev]['dev'].initialize_driver()
+
+            else:
+                self.logger.warning('Trying to load {}, but already exists'.format(dev))
+                raise Warning('Loading a duplicated device')
         self.loaded_devices = True
         return True
 
@@ -64,10 +79,20 @@ class Experiment(object):
             acts = actuators_dict[dev]
             for act in acts:
                 act_data = acts[act]
+                act_data['name'] = act  # Explicitly add the name
+
                 if act in self.devices[dev]['actuators']:
                     raise Exception('Actuator possibly double defined. Check that there are no two actuators with \
                                     the same main key connected to the same device.')
                 self.devices[dev]['actuators'][act] = Actuator(act_data)
+                self.devices[dev]['actuators'][act].device = self.devices[dev]['dev']
+
+                self.logger.debug('Added {} to the actuators'.format(act_data['name']))
+                if 'default' in act_data:
+                    self.logger.debug('Defaults for {} detected'.format(act_data['name']))
+                    self.logger.info('Set {} to {}'.format(act_data['name'], Q_(act_data['default'])))
+                    self.devices[dev]['actuators'][act].value = Q_(act_data['default'])
+
         self.loaded_actuators = True
         return True
 
@@ -90,29 +115,24 @@ class Experiment(object):
             sens = sensors_dict[dev]
             for sen in sens:
                 sen_data = sens[sen]
+                sen_data['name'] = sen  # Explicitly adding the name of the sensor
                 if sen in self.devices[dev]['sensors']:
                     raise Exception('Sensor possibly double defifned. Check that there are no two actuators with \
                                     the same main key connected to the same device.')
                 self.devices[dev]['sensors'][sen] = Sensor(sen_data)
+                self.logger.debug('Added {} to sensors'.format(sen_data['name']))
         self.loaded_sensors = True
         return True
 
     def initialize_devices(self):
-        """ Initializes the devices. It means that it will load the appropriate drivers and check if there are defaults
-        defined and will apply them.
+        """ Initializes the devices. It means that it will load the appropriate drivers.
         """
         if not self.loaded_devices:
             raise Exception('Devices have to be loaded before being initialized.')
 
         for dev in self.devices:
-            d = self.devices[dev] # This is the Device class
+            d = self.devices[dev]['dev'] # This is the Device instance
             d.initialize_driver()
-            if 'defaults' in dev.properties:
-                defaults_file = dev.properties['defaults']
-                defaults = from_yaml_to_dict(defaults_file)[dev.properties['name']]
-                dev.apply_values(defaults)
-
-
 
     def initalize(self):
         pass

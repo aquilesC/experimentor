@@ -32,6 +32,9 @@ class Config(object):
     ni_trigger_edge = nidaq.DAQmx_Val_Rising
     ni_read_timeout = 0
 
+    class Laser:
+        number_checks_per_scan = 10  # How many times it checks if the 1D scan is done.
+
     class NI:
         """ Default values for the National Instruments ADQ cards."""
         class Output:

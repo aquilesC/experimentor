@@ -103,7 +103,6 @@ class Device:
 
         :param values: a dictionary of parameters and desired values for those parameters. The parameters should have units.
 
-        .. deprecated:: version 0.2
         """
         if self.driver is None:
             logger.error('Trying to apply values before initializing the driver')

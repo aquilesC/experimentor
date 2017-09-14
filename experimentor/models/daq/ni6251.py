@@ -33,7 +33,8 @@ class NI(Daq):
         self.monitorNum = []
         self.tasks = []
         self.nidaq = nidaq
-        logger.info('Started NI instrument with number: {}'.format(daq_num))
+        self.logger = logging.getLogger(__name__)
+        self.logger.info('Started NI instrument with number: {}'.format(daq_num))
 
     def apply_value(self, actuator, value):
         """ Sets the output of the NI card. For the time being it sets a DC constant value; this has to be expanded to
@@ -70,14 +71,14 @@ class NI(Daq):
 
             autostart = nidaq.bool32(True)
             timeout = Config.NI.Output.Analog.timeout
-            logger.debug('Actuator: {}, MIN: {}, MAX: {}, Value: {}'.format(actuator.name, min_V, max_V, output_volts))
+            self.logger.debug('Actuator: {}, MIN: {}, MAX: {}, Value: {}'.format(actuator.name, min_V, max_V, output_volts))
             t = nidaq.Task()
             t.CreateAOVoltageChan(port, None, min_V, max_V, nidaq.DAQmx_Val_Volts, None)
             t.WriteAnalogScalarF64(autostart, timeout, output_volts, None)
             t.StopTask()
             t.ClearTask()
 
-        logger.info('Changed the value of {} to {}'.format(actuator.name, value))
+        self.logger.info('Changed the value of {} to {}'.format(actuator.name, value))
 
     def read_value(self, sensor):
         """ Reads the value of a sensor.
@@ -127,12 +128,11 @@ class NI(Daq):
 
         """
         t = nidaq.Task()
-        dev = 'Dev%s' % self.daq_num
-        devices = conditions['devices']
-        if not isinstance(devices, list):
-            channel = ["Dev%s/ai%s" % (self.daq_num, devices.properties['port'])]
-            limit_min = [devices.properties['limits']['min']]
-            limit_max = [devices.properties['limits']['max']]
+        sensors = conditions['sensors']
+        if not isinstance(sensors, list):
+            channel = ["Dev%s/ai%s" % (self.daq_num, sensors.properties['port'])]
+            limit_min = [sensors.properties['limits']['min']]
+            limit_max = [sensors.properties['limits']['max']]
         else:
             channel = []
             limit_max = []
@@ -145,11 +145,10 @@ class NI(Daq):
         channels = ', '.join(channel)
         channels.encode('utf-8')
         freq = int(1 / conditions['accuracy'].to('s').magnitude)
-        # freq = freq.magnitude
-        logger.debug('SAMPLES PER SECOND: %s' % freq)
+        self.logger.debug('SAMPLES PER SECOND: %s' % freq)
         if conditions['trigger'] == 'external':
             trigger = "/Dev%s/%s" % (self.daq_num, conditions['trigger_source'])
-            logger.debug('NI: external trigger: %s' % trigger)
+            self.logger.debug('NI: external trigger: %s' % trigger)
         else:
             trigger = ""
         if 'trigger_edge' in conditions:
@@ -158,12 +157,12 @@ class NI(Daq):
             elif conditions['trigger_edge'] == 'falling':
                 trigger_edge = nidaq.DAQmx_Val_Falling
         else:
-            trigger_edge = Config.ni_trigger_edge
+            trigger_edge = Config.NI.Input.Analog.trigger_edge
 
         if 'measure_mode' in conditions:
             measure_mode = conditions['measure_mode']
         else:
-            measure_mode = Config.ni_measure_mode
+            measure_mode = Config.NI.Input.Analog.measure_mode
 
         t.CreateAIVoltageChan(channels, None, measure_mode, min(limit_min),
                               max(limit_max), nidaq.DAQmx_Val_Volts, None)
@@ -188,15 +187,19 @@ class NI(Daq):
         return len(self.tasks) - 1
 
     def trigger_analog(self, task=None):
-        """
+        """ Trigger the given task for acquiring an analog signal. If none is given, it triggers the last registered
+        task.
+
         :param task: Task number to be triggered.
-        :return:
         """
         if task is None:
+            task = -1
             t = self.tasks[-1]
+            self.logger.info('Getting last registered task')
         else:
             t = self.tasks[task]
         t.StartTask()  # Starts the measurement.
+        self.logger.info('Starting task number {}'.format(task))
 
     def read_analog(self, task, conditions):
         """Gets the analog values acquired with the triggerAnalog function.
@@ -292,7 +295,11 @@ class NI(Daq):
         self.tasks.append(t)
         return len(self.tasks) - 1
 
-    def is_task_complete(self, task):
+    def is_task_complete(self, task=None):
+        """ Returns true if the given task is complete. If no given task, then the last registered task."""
+        if task is None:
+            task = -1
+
         t = self.tasks[task]
         d = nidaq.bool32()
         t.GetTaskComplete(d)
@@ -308,14 +315,3 @@ class NI(Daq):
 
     def reset_device(self):
         nidaq.DAQmxResetDevice('Dev%s' % self.daq_num)
-
-
-if __name__ == '__main__':
-    print(Config.monitor_read_scan)
-    # a = NI(3)
-    # b = 10 * Q_('ms')
-    # print(type(b))
-    # # b = Q_(b, 'seconds')
-    # print(1 / b.to('seconds'))
-    # print(nidaq.DAQmx_Val_Falling)
-    # print(b.magnitude)

@@ -10,19 +10,18 @@
 TSL-710:
   type: scan laser
   name: Santec Laser
-  driver: controller.santec.tsl710/tsl710 # last one is the name of the class inside the file.
+  driver: experimentor.drivers.santec.tsl710/tsl710 # last one is the name of the class inside the file.
   model: TSL-710
   connection:
     type: GPIB
     port: 1
- # defaults: config/devices_defaults.yml #setting defaults will trigger an action after initializing each device with model/lib/device.py class
 
 NI-DAQ:
   name: NI-DAQ
   type: daq
   model: ni
   number: 2
-  driver: pharos.model.daq.ni/ni
+  driver: experimentor.models.daq.ni/ni
   connection:
     type: daq
     port: 2
@@ -31,7 +30,7 @@ NI-DAQ:
 
 oscilloscope:
   type: daq
-  driver: model.daq.keysight
+  driver: experimentor.model.daq.keysight
   name: Keysight oscilloscope
   trigger: external
   trigger_source: 1 # This is only for example purposes!
@@ -42,7 +41,7 @@ oscilloscope:
 
 oscilloscope 2:
   type: daq
-  driver: model.daq.keysight
+  driver: experimentor.model.daq.keysight
   name: Keysight oscilloscope
   connection:
     type: USB
@@ -52,14 +51,10 @@ oscilloscope 2:
 DummyDaq:
   type: daq
   name: dummy daq
-  driver: pharos.model.daq.daqDummy/dummyDaq
+  driver: experimentor.model.daq.daqDummy/dummyDaq
   connection:
     type: daq
     port: 1
   defaults: config/devices_defaults.yml
   trigger: external
   trigger_source: PFI0
-
-
-
-

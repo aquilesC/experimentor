@@ -31,8 +31,10 @@ NI-DAQ:
 # setup a GUI or to monitor values that are provided by the device itself. No need to write them ALL down, just the ones
 # relevants for the experiment.
 TSL-710:
-  - wavelength
-  - power
+  Wavelength:
+    property: wavelength
+  Power:
+    property: powermW
 
 # There can be another ADQ device, such as an oscilloscope
 oscilloscope:
