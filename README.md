@@ -1,8 +1,10 @@
-# Experimentor v0.1 #
+# Experimentor v0.2 #
 
-Package for developing control and automation software in research labs.
+**A flexible package for experiment control and automation**
 
-## Goals ##
+Experimentor is a Python package aimed at simplifying the task of controlling experiments in various fields. The starting point of the development was a nano photonics setup and therefore the examples and the bulk of the code makes references to optical microscopes, but by no means this project is limited to them.
 
-1. [X] Goal 1
-2. [ ] Goal 2
+Installing
+----------
+
+The code of this program is the repository that can be found at ``https://github.com/uetke/experimentor``. You may also check the website ``https://uetke.com`` for some updates and comments that may not enter into this documentation.
