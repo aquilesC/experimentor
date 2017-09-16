@@ -138,4 +138,6 @@ class Experiment(object):
         pass
 
     def finalize(self):
-        pass
+        """ What to do when the program finishes."""
+        if not hasattr(self, 'finish'):
+            self.logger.warning('Class does not have a finalize statement')
