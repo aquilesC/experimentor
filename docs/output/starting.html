@@ -1,0 +1,127 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Starting to use the Experimentor &#8212; Experimentor 0.1 documentation</title>
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Installation instructions" href="installing.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="installing.html" title="Installation instructions"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Experimentor 0.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Starting to use the Experimentor</a><ul>
+<li><a class="reference internal" href="#defining-devices-sensors-and-actuators">Defining devices, sensors and actuators</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="installing.html"
+                        title="previous chapter">Installation instructions</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/starting.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="starting-to-use-the-experimentor">
+<h1>Starting to use the Experimentor<a class="headerlink" href="#starting-to-use-the-experimentor" title="Permalink to this headline">¶</a></h1>
+<p>The package provides the basic classes and functions to communicate with devices and plan experiments. The package was designed to impose a workflow that guarantees the user will be able to plan an experiment from start to finish.</p>
+<p>Experimentor is packaged with the folder containing the main code, i.e. the package itself, and a folder of examples that show some cases of how the program can be used.</p>
+<div class="section" id="defining-devices-sensors-and-actuators">
+<h2>Defining devices, sensors and actuators<a class="headerlink" href="#defining-devices-sensors-and-actuators" title="Permalink to this headline">¶</a></h2>
+<p>Every experiment should start by defining what devices, sensors and actuators are going to be used. The general structure is that devices communicate with the computer, while sensors and actuators are plugged into devices. For example an acquisition card such as an oscilloscope is a <em>device</em>. A photodiode connected to it is a <em>sensor</em>, while a piezo stage connected to the output of a function generator is an <em>actuator</em>.</p>
+<p>In the same fashion, a tunable laser is a device and the wavelength is an actuator. In this way the same structure of programs can be preserved throughout different projects. This is specially handy when developing GUIs, since it enables the iteration through all sensors or all actuators of a given device.</p>
+<p>Devices, sensors and actuators are defined through YAML files. The examples folder contains some general files that show how to do it. Generally speaking it would look like something like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">NI</span><span class="o">-</span><span class="n">DAQ</span><span class="p">:</span>
+  <span class="n">name</span><span class="p">:</span> <span class="n">NI</span><span class="o">-</span><span class="n">DAQ</span>
+  <span class="nb">type</span><span class="p">:</span> <span class="n">daq</span>
+  <span class="n">model</span><span class="p">:</span> <span class="n">ni</span>
+  <span class="n">number</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="n">driver</span><span class="p">:</span> <span class="n">experimentor</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">daq</span><span class="o">.</span><span class="n">ni</span><span class="o">/</span><span class="n">ni</span>
+  <span class="n">connection</span><span class="p">:</span>
+    <span class="nb">type</span><span class="p">:</span> <span class="n">daq</span>
+    <span class="n">port</span><span class="p">:</span> <span class="mi">2</span>
+  <span class="n">trigger</span><span class="p">:</span> <span class="n">external</span>
+  <span class="n">trigger_source</span><span class="p">:</span> <span class="n">PFI0</span>
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="installing.html" title="Installation instructions"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Experimentor 0.1 documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, Aquiles Carattino.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

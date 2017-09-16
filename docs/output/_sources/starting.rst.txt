@@ -1,0 +1,26 @@
+Starting to use the Experimentor
+================================
+
+The package provides the basic classes and functions to communicate with devices and plan experiments. The package was designed to impose a workflow that guarantees the user will be able to plan an experiment from start to finish.
+
+Experimentor is packaged with the folder containing the main code, i.e. the package itself, and a folder of examples that show some cases of how the program can be used.
+
+Defining devices, sensors and actuators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Every experiment should start by defining what devices, sensors and actuators are going to be used. The general structure is that devices communicate with the computer, while sensors and actuators are plugged into devices. For example an acquisition card such as an oscilloscope is a *device*. A photodiode connected to it is a *sensor*, while a piezo stage connected to the output of a function generator is an *actuator*.
+
+In the same fashion, a tunable laser is a device and the wavelength is an actuator. In this way the same structure of programs can be preserved throughout different projects. This is specially handy when developing GUIs, since it enables the iteration through all sensors or all actuators of a given device.
+
+Devices, sensors and actuators are defined through YAML files. The examples folder contains some general files that show how to do it. Generally speaking it would look like something like this::
+
+   NI-DAQ:
+     name: NI-DAQ
+     type: daq
+     model: ni
+     number: 2
+     driver: experimentor.models.daq.ni/ni
+     connection:
+       type: daq
+       port: 2
+     trigger: external
+     trigger_source: PFI0
