@@ -35,6 +35,7 @@ class LaserScan(Experiment):
         self.load_sensors(sensors)
         self.load_actuators(actuators)
         self.initialize_devices()
+        self.daqs = {}  # Pace to store the DAQ devices that will be acquiring data
 
     def setup_scan(self):
         """ Prepares the scan by setting all the parameters to the DAQs and laser.
@@ -54,7 +55,7 @@ class LaserScan(Experiment):
         laser_params['wavelength_sweeps'] = 1
 
         laser.apply_values(laser_params)
-        num_points = int(
+        num_points = 1+int(
             (laser.params['stop_wavelength'] - laser.params['start_wavelength']) / laser.params['interval_trigger'])
 
         # Estimated accuracy to set the DAQmx to.
@@ -71,24 +72,31 @@ class LaserScan(Experiment):
             dev = self.devices[device]['dev']
             sensors = []
             if dev.properties['model'] == 'ni':
+                self.daqs[device]['dev'] = dev
                 self.logger.debug('NI card devices')
-                sens_to_monitor = self.scan['detectors']
+                sens_to_monitor = self.scan['detectors'][device]
                 for sensor in sens_to_monitor:
                     self.logger.debug('Setting up {} for scans'.format(sensor))
-                    if sensor not in self.devices[device]['sensor']:
+                    if sensor not in self.devices[device]['sensors']:
                         self.logger.warning('Trying to read {} from {}, but was not registered'.format(sensor, device))
                         raise Warning('Sensor not found')
                     else:
-                        s = self.devices['sensors'][sensor]
+                        s = self.devices[device]['sensors'][sensor]
                         sensors.append(s)
-                self.logger.info('Going to monitor {} devices.'.format(len(sensors)))
+                self.logger.info('Going to monitor {} sensors.'.format(len(sensors)))
                 daq_driver = dev.driver
                 conditions.update({
                     'sensors': sensors,
                     'trigger': dev.properties['trigger'],
                     'trigger_source': dev.properties['trigger_souruce'],
+                    'sampling': 'continuous',
                 })
                 self.scan_task = daq_driver.analog_input_setup(conditions)
+                daq_driver.trigger_analog()
+                self.daqs[device]['monitor'] = sensor
+                self.daqs[device]['monitor_task'] = self.scan_task
+            else:
+                self.logger.warning('Only NI cards are supported at this time')
 
     def do_scan(self):
         """ Does the scan considering that everything else was already set up.
@@ -106,15 +114,18 @@ class LaserScan(Experiment):
             raise Warning('Wrong number of axis')
 
         dev_to_scan = list(axis.keys())[-1] # Get the name of the device
+        self.logger.info('Device to scan: {}'.format(dev_to_scan))
         actuator_to_scan = list(axis[dev_to_scan].keys())[-1]
+        self.logger.info('Actuator to scan: {}'.format(actuator_to_scan))
         range = axis[dev_to_scan][actuator_to_scan]['rage']
+        self.logger.debug('Range to scan: {}'.format(range))
         # Scan the laser and the values of the given device
         if dev_to_scan != 'time':
             start = Q_(range[0])
             stop = Q_(range[1])
             step = Q_(range[2])
             units = start.u
-            num_points_dev = ((stop-start)/step).to('') + 1 # This is to include also the last point
+            num_points_dev = ((stop-start)/step).to('') + 1  # This is to include also the last point
         else:
             start = 1
             stop = range[1]
@@ -125,21 +136,17 @@ class LaserScan(Experiment):
                 self.devices[dev_to_scan]['actuators'][actuator_to_scan].value = value * units
                 self.logger.debug('Set {} to {}'.format(actuator_to_scan, value))
 
-            for d in self.scans['detectors']:
-                dev = self.devices[d]['dev']
-                if dev.properties['model'] != 'ni':
-                    self.logger.warning('Trying to read from a non NI device.')
-                    raise Warning('Reading from other than NI is not yet implemented.')
-                self.logger.info('Starting task in {}'.format(d))
-                daq_driver = dev.driver
-                if daq_driver.driver.is_task_complete():
-                    daq_driver.driver.trigger_analog()
-
             laser.driver.execute_sweep()
             self.logger.info('Executing laser sweep')
             sleep(0.1)
             while laser.driver.sweep_condition != 'Stop':
                 sleep(approx_time_to_scan.m/Config.Laser.number_checks_per_scan)
+
+        for device in self.scan['detectors']:
+            dev = self.devices[device]['dev']
+            daq_driver = dev.driver
+            daq_driver.stop_task()
+            daq_driver.clear_task()
 
     def set_value_to_device(self, dev_name, value):
         """ Sets the value of the device. If it is an analog output, it takes just one value.
@@ -177,8 +184,9 @@ class LaserScan(Experiment):
         devices_to_monitor = monitor['detectors']
 
         # Lets calculate the conditions of the scan
-        num_points = int(
+        num_points = 1 + int(
             (laser.params['stop_wavelength'] - laser.params['start_wavelength']) / laser.params['trigger_step'])
+
         accuracy = laser.params['trigger_step'] / laser.params['wavelength_speed']
 
         self.logger.debug('1D scan with {} number of points'.format(num_points))
@@ -198,41 +206,40 @@ class LaserScan(Experiment):
         for device in devices_to_monitor:
             dev = self.devices[device]['dev']  # Get the DAQ.
             sensors = []
-            for sensor in d:
-                if sensor not in daq:
-                    self.logger.warning('Trying ro read sensor {} not associated with the proper DAQ {}.'.format(sensor, daq))
-                    raise Warning('Sensor not associated with this device.')
+            if dev.properties['model'] != 'ni':
+                self.logger.warning('Only NI Cards are supported at the moment.')
+                raise Warning('Onli NI cards are supported at the moment.')
+            self.daqs[device]['dev'] = dev
+            self.logger.debug('NI card devices')
+            sens_to_monitor = monitor['detectors'][device]
+            for sensor in sens_to_monitor:
+                self.logger.debug('Setting up {} for monitor'.format(sensor))
+                if sensor not in self.devices[device]['sensors']:
+                    self.logger.warning('Trying to read {} from {}, but it was not registered'.format(sensor, device))
+                    raise Warning('Sensor not found')
+                else:
+                    s = self.devices[device]['sensor'][sensor]
+                    sensors.append(s)
 
-            daq_driver = self.devices[d]  # Gets the link to the DAQ
-            if len(daq['monitor']) > 0:
-                print('DAQ: %s' % d)
-                devs_to_monitor = daq['monitor']  # daqs dictionary groups the channels by daq to which they are plugged
-                print('Devs to monitor:')
-                print(devs_to_monitor)
-                conditions['devices'] = devs_to_monitor
-                conditions['trigger'] = daq_driver.properties['trigger']
-                print('Trigger: %s' % conditions['trigger'])
-                conditions['trigger_source'] = daq_driver.properties['trigger_source']
-                print('Trigger source: %s' % conditions['trigger_source'])
-                conditions['sampling'] = 'continuous'
-                daq['monitor_task'] = daq_driver.driver.analog_input_setup(conditions)
-                self.daqs[d] = daq  # Store it back to the class variable
-                print('Task number: %s' % self.daqs[d]['monitor_task'])
+                self.logger.info('Going to monitor {} sensors'.format(len(sensors)))
+                daq_driver =dev.driver
+                conditions.update({
+                    'sensors': sensors,
+                    'trigger': dev.properties['trigger'],
+                    'trigger_source': dev.properties['trigger_source'],
+                    'sampling': 'continuous',
+                })
+                self.monitor_task = daq_driver.analog_input_setup(conditions)
+                daq_driver.trigger_analog()
+                self.daqs[device]['monitor'] = sensor
+                self.daqs[device]['monitor_task'] = self.monitor_task
 
     def start_continuous_scans(self):
         """Starts the laser, and triggers the daqs. It assumes setup_continuous_scans was already called."""
         monitor = self.monitor
         laser = self.devices[monitor['laser']['name']]
-
-        for d in self.daqs:
-            daq = self.daqs[d]
-            daq_driver = self.devices[d].driver
-            if len(daq['monitor'])>0:
-                devs_to_monitor = daq['monitor']  # daqs dictionary groups the channels by daq to which they are plugged             
-                if daq_driver.is_task_complete(daq['monitor_task']):
-                    daq_driver.trigger_analog(daq['monitor_task'])
-
         laser.driver.execute_sweep()
+        self.logger.info('Executing laser sweep')
 
     def read_continuous_scans(self, devs):
         """ Reads the values being acquired while the scan is running.
@@ -241,7 +248,7 @@ class LaserScan(Experiment):
         :param devs: Devices to read from
         :type devs: list
         """
-        conditions = {'points': -1}  # To read all the points available
+        conditions = {'points': -1}  # To read all daqthe points available
         data = {}
         for d in devs:
             daq = self.daqs[d]
@@ -263,7 +270,7 @@ class LaserScan(Experiment):
         for d in self.daqs:
             daq = self.daqs[d]
             if len(daq['monitor']) > 0:
-                daq_driver = self.devices[d].driver
+                daq_driver = daq['dev'].driver
                 daq_driver.stop_task(daq['monitor_task'])
                 daq_driver.clear_task(daq['monitor_task'])
 
@@ -276,6 +283,22 @@ class LaserScan(Experiment):
         monitor = self.monitor
         laser = self.devices[monitor['laser']['name']].driver
         laser.execute_sweep()
+
+    def finalize(self):
+        """ What to do when the program finishes."""
+        if not hasattr(self, 'finish'):
+            self.logger.warning('Class does not have a finalize statement')
+
+        # Applies the given values to every device that appears in the finalize
+        for dev in self.finish:
+            self.logger.info('Finalizing {}'.format(dev))
+            values = self.finish[dev]
+            device = self.devices[dev]['dev']
+            device.apply_values(values)
+            try:
+                device.driver.finalize()
+            except:
+                self.logger.warning('Failed to finalize driver {}'.fromat(dev))
 
 
 if __name__ == "__main__":
