@@ -62,3 +62,73 @@ None of the keys specified here are mandatory, but common sense dictates that th
 Defining the Experiment
 ~~~~~~~~~~~~~~~~~~~~~~~
 The experiment, following the scheme developed for devices, sensors and actuators, is layed out in a YAML file. When writing it, the user has to keep in mind what are the parameters that need to be used, the kind of measurements that have to be achieved, etc. At this stage it is only a matter of thinking, the real logic and communication with devices will come later.
+
+For example, if we want to scan the wavelength of a laser, we would write something like this::
+
+   init:
+     devices: 'config/devices.yml'
+     sensors: 'config/sensors.yml'
+     actuators: 'config/actuators.yml'
+
+   scan:
+     laser:
+       name: Santec Laser
+       params:
+         start_wavelength: 1491 nm
+         stop_wavelength:  1510 nm
+         wavelength_speed:  10 nm/s
+         interval_trigger: 0.01 nm
+         sweep_mode: ContOne
+         wavelength_sweeps: 1
+     detectors:
+       NI-DAQ:
+         - Photodiode Test
+         - Photodiode 2
+
+   finish:
+     laser:
+       shutter: False
+
+You see that by laying down the experiment like this, it is easier to decie what we should do 'under the hood'. Of course, this example was already iterated; normally, you would write down fewer parameters, and while developing the code, you'll realized you forgot to declare an important variable, then you go back and you added, etc.
+
+Block by block::
+
+   init:
+     devices: 'config/devices.yml'
+     sensors: 'config/sensors.yml'
+     actuators: 'config/actuators.yml'
+
+Of course the first step is to established where the config files are. Having it explicitly stated enables the user to keep several config files for different experiments, but with the same underlying logic. May not be initially apparent why at the beginning, but it becomes clearer with time.
+
+The second block is where we actually define what scan we want to do::
+
+   scan:
+     laser:
+       name: Santec Laser
+       params:
+         start_wavelength: 1491 nm
+         stop_wavelength:  1510 nm
+         wavelength_speed:  10 nm/s
+         interval_trigger: 0.01 nm
+         sweep_mode: ContOne
+         wavelength_sweeps: 1
+     detectors:
+       NI-DAQ:
+         - Photodiode Test
+         - Photodiode 2
+
+The first key, `laser` establishes what device we are going to scan. The name here, as you may have guessed, is the name we gave to the device when we defined it in `devices.yml`. The block of `parmas` sets all the parameters we need to make a scan, i.e., the starting wavelength, the stop wavelength, etc. At this moment I won't enter into the details of the chosen names, but they are closely related to properties in the driver of the laser.
+
+Finally, the `detectors` block determines what detectors are going to be monitored while the laser is scanning. They are nested according to the device to which they are plugged to.
+
+There are few things worth noting before moving forward. First, there is no need of any more information for performing a scan. However you see also that we are not establishing any logic to the measurement, meaning, for example, when and how we trigger it.
+
+Experimentor is thought in such a way that the logic should be hardcoded into the Python code. However, if it is important to have the flexibility of altering a trigger behavior, etc. one could add an extra parameter in the scan block that later will be interpreted by the Python code.
+
+Finally, we have to do something when the experiment finishes, in our case we only want to close the shutter::
+
+   finish:
+     laser:
+       shutter: False
+
+The overall structure of the yaml file may look a bit more involved than needed by simple experiments; for example we explicitly state which laser we use, while we could have hard coded this (there is only one laser plugged into the experiment). However keeping a more flexible approach enables users to re utilize code more easily. Scanning a laser today may be scanning a stepper motor tomorrow.

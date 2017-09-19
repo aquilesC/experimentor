@@ -43,5 +43,5 @@ scan:
       - Photodiode 2
 
 finish:
-  TSL-10:
+  laser:
     shutter: False
