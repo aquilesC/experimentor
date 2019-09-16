@@ -8,11 +8,14 @@
 
     .. sectionauthor:: Aquiles Carattino <aquiles@aquicarattino.com>
 """
+from experimentor.models import Model
 
-class cameraBase():
+class cameraBase(Model):
     MODE_CONTINUOUS = 1
     MODE_SINGLE_SHOT = 0
+
     def __init__(self, camera):
+        super().__init__()
         self.camera = camera
         self.running = False
         self.maxWidth = 0
@@ -53,7 +56,7 @@ class cameraBase():
         """
         print("Not Implemented")
 
-    def setExposure(self,exposure):
+    def setExposure(self, exposure):
         """
         Sets the exposure of the camera.
         """
@@ -66,14 +69,14 @@ class cameraBase():
         """
         print("Not Implemented")
         return self.exposure
-        
+
     def readCamera(self):
         """
         Reads the camera
         """
         print("Not Implemented")
 
-    def setROI(self,X,Y):
+    def setROI(self, X, Y):
         """ Sets up the ROI. Not all cameras are 0-indexed, so this is an important
         place to define the proper ROI.
 
@@ -115,7 +118,7 @@ class cameraBase():
         """Stops the acquisition without closing the connection to the camera."""
         print("Not Implemented")
 
-    def setBinning(self,xbin,ybin):
+    def setBinning(self, xbin, ybin):
         """
         Sets the binning of the camera if supported. Has to check if binning in X/Y can be different or not, etc.
 
@@ -129,8 +132,8 @@ class cameraBase():
         """Stops the acquisition and closes the connection with the camera.
         """
         try:
-            #Closing the camera
+            # Closing the camera
             print("Not Implemented")
         except:
-            #Camera failed to close
+            # Monitor failed to close
             print("Not Implemented")

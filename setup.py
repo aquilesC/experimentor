@@ -10,5 +10,10 @@ setup(
     license='MIT',
     author='Aquiles',
     author_email='aquiles@uetke.com',
-    description='Basic building blocks for controlling complex setups'
+    description='Basic building blocks for controlling complex setups',
+    install_requires=[
+        'pint',
+        'numpy',
+    ],
+    python_requires='>=3.6',
 )

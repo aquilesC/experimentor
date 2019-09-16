@@ -141,3 +141,11 @@ class Experiment(object):
         """ What to do when the program finishes."""
         if not hasattr(self, 'finish'):
             self.logger.warning('Class does not have a finalize statement')
+
+    @classmethod
+    def config_from_file(cls, filename='config.py'):
+        data = {'First_step': '0'}
+        return cls(data)
+
+    def run(self):
+        pass

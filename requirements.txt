@@ -1,2 +1,2 @@
-Pint==0.8.1
-PyDAQmx==1.3.2
+Pint
+PyDAQmx

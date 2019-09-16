@@ -1,0 +1,2 @@
+class FakeCam:
+    pass
