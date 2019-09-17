@@ -22,14 +22,22 @@ inherited by the rest of the code.
     the Experimentor happens.
 
 """
-import PyDAQmx as nidaq
+try:
+    import PyDAQmx as nidaq
+except ModuleNotFoundError:
+    nidaq = False
+    print('Check whether you need to install PyDAQmx')
 
+zmq_publisher_port = 5556
+zmq_listener_port = 5557
+exit = "exit"
 
 class Config(object):
     # Settings specific to the national instruments card. Not all experiments will need this block.
     ni_buffer = 50000  # When acquiring in continuous mode, how big is the buffer.
-    ni_measure_mode = nidaq.DAQmx_Val_Diff
-    ni_trigger_edge = nidaq.DAQmx_Val_Rising
+    if nidaq:
+        ni_measure_mode = nidaq.DAQmx_Val_Diff
+        ni_trigger_edge = nidaq.DAQmx_Val_Rising
     ni_read_timeout = 0
 
     class Laser:
@@ -49,7 +57,8 @@ class Config(object):
                 freq = 1/1000  # kHz, in order to do an average of 10 measurements in 10ms.
                 num_points = 10
                 trigger = ""  # Internal trigger
-                trigger_edge = nidaq.DAQmx_Val_Rising
-                measure_mode = nidaq.DAQmx_Val_Diff
-                cont_finite = nidaq.DAQmx_Val_FiniteSamps
+                if nidaq:
+                    trigger_edge = nidaq.DAQmx_Val_Rising
+                    measure_mode = nidaq.DAQmx_Val_Diff
+                    cont_finite = nidaq.DAQmx_Val_FiniteSamps
                 read_timeout = 0

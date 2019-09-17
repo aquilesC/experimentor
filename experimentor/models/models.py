@@ -6,9 +6,45 @@ for example how to read a value from a sensor and how to apply a value to an act
 Models can also take care of manipulating data, for example calculating an FFT and returning it to the user.
 
 """
+import weakref
 from copy import deepcopy
 
 from experimentor.core.model_properties import ModelProp
+
+
+class MetaModel(type):
+    def __init__(cls, name, bases, attrs):
+        print('Init')
+        # Create class
+        super(MetaModel, cls).__init__(name, bases, attrs)
+
+        # Initialize fresh instance storage
+        cls._instances = weakref.WeakSet()
+
+    def __call__(cls, *args, **kwargs):
+        print('Call')
+        # Create instance (calls __init__ and __new__ methods)
+        inst = super(MetaModel, cls).__call__(*args, **kwargs)
+
+        # Store weak reference to instance. WeakSet will automatically remove
+        # references to objects that have been garbage collected
+        cls._instances.add(inst)
+
+        return inst
+
+    def _get_instances(cls, recursive=False):
+        """Get all instances of this class in the registry. If recursive=True
+        search subclasses recursively"""
+        instances = list(cls._instances)
+        if recursive:
+            for Child in cls.__subclasses__():
+                instances += Child._get_instances(recursive=recursive)
+
+        # Remove duplicates from multiple inheritance.
+        return list(set(instances))
+
+
+class BaseModel(metaclass=MetaModel): pass
 
 
 class Model:

@@ -21,55 +21,45 @@ from time import sleep
 import zmq
 
 from experimentor import general_stop_event
-from experimentor.models.experiments import config
+from experimentor.config import config
 from experimentor.lib.log import get_logger
 
 
-class Publisher:
+class Publisher(Process):
     """ Publisher class in which the queue for publishing messages is defined and also a separated process is started.
     It is important to have a new process, since the serialization/deserialization of messages from the QUEUE may be
     a bottleneck for performance.
     """
-    def __init__(self, port=None):
+    def __init__(self, listener_port=None, publisher_port=None):
+        super(Publisher, self).__init__()
         self.logger = get_logger(name=__name__)
-        if not port:
-            self._port = config.zmq_port
-        else:
-            self._port = port
-        self._queue = Queue()  # The publisher will grab and broadcast the messages from this queue
-        self._event = Event()   # This event is used to stop the process
-        self._process = None
-        self.logger.info('Initialized publisher on port {}'.format(self._port))
 
-    def start(self):
+        self.listener_port = listener_port or config.zmq_listener_port
+        self.publisher_port = publisher_port or config.zmq_publisher_port
+
+        self._event = Event()   # This event is used to stop the process
+
+    def run(self):
         """ Start a new process that will be responsible for broadcasting the messages.
 
             .. TODO:: Find a way to start the publisher on a different port if the one specified is in use.
         """
-        self._event.clear()
-        try:
-            self._process = Process(target=publisher, args=[self._queue, self._event, self._port])
-            self._process.start()
-            return True
-        except zmq.ZMQError:
-            self._port += 1
-            config.zmq_port = self._port
-            return self.start()
+        self.logger.debug('Publisher initializing')
+        context = zmq.Context()
+        listener = context.socket(zmq.PULL)
+        listener.bind("tcp://127.0.0.1:5557")
+        publisher = context.socket(zmq.PUB)
+        publisher.bind("tcp://*:5556")
+        sleep(1) # To give time to binding to the given port
 
-        # sleep(1)  # This forces the start to block until the publisher is ready
+        while not self._event.is_set():
+            data = listener.recv_pyobj()
+            publisher.send_pyobj(data)
+            if isinstance(data, str) and data == config.exit:
+                break
 
     def stop(self):
         self._event.set()
-        self.empty_queue()
-
-    def empty_queue(self):
-        """ If the publisher stops before broadcasting all the messages, the Queue may still be using some memory. This
-        method is simply getting all the elements in order to free memory. Can be useful for garbage collection or
-        better control of the downstream program.
-        """
-        self.logger.info('Emptying the queue of the publisher')
-        self.logger.debug('Queue length: {}'.format(self._queue.qsize()))
-        self._queue.close()
 
     def publish(self, topic, data):
         """ Adapts the data to make it faster to broadcast

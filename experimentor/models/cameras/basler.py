@@ -13,15 +13,12 @@ import logging
 import warnings
 from typing import Tuple
 
-try:
-    from pypylon import pylon
-except ImportError:
-    raise Exception("You are trying to use a Basler camera, but you need to install Pylon and PyPylon before")
+from pypylon import pylon
 
-from experimentor.models.cameras.base_camera import BaseCamera
-from experimentor.models.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
-from experimentor.lib.log import get_logger
-from experimentor import Q_
+from pynta.model.cameras.base_camera import BaseCamera
+from pynta.model.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
+from pynta.util import get_logger
+from pynta import Q_
 
 logger = get_logger(__name__)
 
@@ -69,9 +66,12 @@ class Camera(BaseCamera):
 
         self.max_width = self.camera.Width.Max
         self.max_height = self.camera.Height.Max
-        logger.info(f'Camera max width and height: ({self.max_width}px, {self.max_height}px)')
-        self.X, self.Y = self.get_size()
-        logger.info(f'Camera current width and heigh: ({self.X}px, {self.Y}px)')
+        offsetX = self.camera.OffsetX.Value
+        offsetY = self.camera.OffsetY.Value
+        width = self.camera.Width.Value
+        height = self.camera.Height.Value
+        self.X = (offsetX, offsetX+width)
+        self.Y = (offsetY, offsetY+height)
 
         self.camera.RegisterConfiguration(pylon.SoftwareTriggerConfiguration(), pylon.RegistrationMode_ReplaceAll,
                                           pylon.Cleanup_Delete)
@@ -211,10 +211,15 @@ class Camera(BaseCamera):
                         grab.Release()
         return [i.T for i in img]  # Transpose to have the correct size
 
-    def stop_camera(self):
-        logger.info('Stopping camera')
+    def stop_acquisition(self):
+        logger.info('Stopping acquisition')
         self.camera.StopGrabbing()
         self.camera.AcquisitionStop.Execute()
+
+    def stop_camera(self):
+        logger.info('Stopping camera')
+        self.stop_acquisition()
+        self.camera.Close()
 
     def __str__(self):
         if self.friendly_name:
@@ -222,6 +227,7 @@ class Camera(BaseCamera):
         return "Basler Camera"
 
     def __del__(self):
+        logger.debug('Deleting camera')
         try:
             self.camera.Close()
         except:

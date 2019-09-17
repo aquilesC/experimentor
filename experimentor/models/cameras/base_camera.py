@@ -27,10 +27,9 @@
 """
 import numpy as np
 
-from pynta.model.decorators import not_implemented
-from pynta.util.log import get_logger
-from pynta import Q_
-
+from experimentor import Q_
+from experimentor.lib.log import get_logger
+from experimentor.models.decorators import not_implemented
 
 logger = get_logger(__name__)
 

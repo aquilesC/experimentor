@@ -19,9 +19,10 @@
 """
 import time
 import numpy as np
-from pynta.model.cameras.simulate_brownian import SimBrownian
-from pynta.util.log import get_logger
-from pynta import Q_
+
+from experimentor import Q_
+from experimentor.lib.log import get_logger
+from experimentor.models.cameras.simulate_brownian import SimBrownian
 from .base_camera import BaseCamera
 
 
