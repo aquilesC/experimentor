@@ -50,11 +50,11 @@ class Publisher(Process):
         listener.bind("tcp://127.0.0.1:5557")
         publisher = context.socket(zmq.PUB)
         publisher.bind("tcp://*:5556")
-        sleep(1) # To give time to binding to the given port
+        sleep(1)  # To give time to binding to the given port
 
         while not self._event.is_set():
-            data = listener.recv_pyobj()
-            publisher.send_pyobj(data)
+            data = listener.recv_multipart()
+            publisher.send_multipart(data)
             if isinstance(data, str) and data == config.exit:
                 break
 
