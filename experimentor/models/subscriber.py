@@ -42,7 +42,7 @@ class Subscriber(Process, metaclass=MetaModel):
             data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
             if isinstance(data, str):
                 if data == SUBSCRIBER_EXIT_KEYWORD:
-                    self.logger.info('Stopping Subscriber')
+                    self.logger.info(f'Stopping Subscriber {self}')
                     break
             ans = self.func(data, *self.args, **self.kwargs)
             if self.publish_topic:
@@ -50,3 +50,9 @@ class Subscriber(Process, metaclass=MetaModel):
 
         sleep(1)  # Gives enough time for the publishers to finish sending data before closing the socket
         socket.close()
+
+    def __str__(self):
+        return f"Subscriber {self.func.__name__}"
+
+    def __repr__(self):
+        return f"<Subscriber {self.func.__name__}>"

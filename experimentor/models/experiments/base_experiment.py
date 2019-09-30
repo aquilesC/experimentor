@@ -22,6 +22,7 @@
     :license: GPLv3, see LICENSE for more details
 """
 from multiprocessing import Process, Event
+from time import sleep
 
 import yaml
 
@@ -45,7 +46,6 @@ class BaseExperiment:
         self.publisher.start()
 
         self.listener = Listener()
-
 
         self._connections = []
         self.subscriber_events = []
@@ -163,6 +163,8 @@ class BaseExperiment:
         """
         for subscriber in Subscriber._get_instances():
             self.listener.publish(SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
+            while subscriber.is_alive():
+                sleep(0.001)
 
         self.listener.publish(PUBLISHER_EXIT_KEYWORD, "")
         self.listener.finish()
