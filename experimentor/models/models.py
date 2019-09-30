@@ -14,7 +14,6 @@ from experimentor.core.model_properties import ModelProp
 
 class MetaModel(type):
     def __init__(cls, name, bases, attrs):
-        print('Init')
         # Create class
         super(MetaModel, cls).__init__(name, bases, attrs)
 
@@ -22,7 +21,6 @@ class MetaModel(type):
         cls._instances = weakref.WeakSet()
 
     def __call__(cls, *args, **kwargs):
-        print('Call')
         # Create instance (calls __init__ and __new__ methods)
         inst = super(MetaModel, cls).__call__(*args, **kwargs)
 

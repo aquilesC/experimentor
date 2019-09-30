@@ -27,8 +27,10 @@ import yaml
 
 from experimentor.models.decorators import not_implemented
 from experimentor.lib.log import get_logger
+from experimentor.models.listener import Listener
 from experimentor.models.publisher import Publisher
-from experimentor.models.subscriber import subscriber
+from experimentor.models.subscriber import Subscriber
+from experimentor.config.settings import *
 
 
 class BaseExperiment:
@@ -39,8 +41,11 @@ class BaseExperiment:
         self.config = {}  # Dictionary storing the configuration of the experiment
         self.logger = get_logger(name=__name__)
         self._threads = []
-        self.publisher = Publisher()
+        self.publisher = Publisher(GENERAL_STOP_EVENT)
         self.publisher.start()
+
+        self.listener = Listener()
+
 
         self._connections = []
         self.subscriber_events = []
@@ -87,7 +92,7 @@ class BaseExperiment:
         self._connections.append({
             'method':method.__name__,
             'topic': topic,
-            'process': Process(target=subscriber, args=arguments, kwargs=kwargs),
+            'process': Process(target=Subscriber, args=arguments, kwargs=kwargs),
             'event': event,
         })
         self._connections[-1]['process'].start()
@@ -156,7 +161,11 @@ class BaseExperiment:
     def finalize(self):
         """ Needs to be overridden by child classes.
         """
-        self.publisher.stop()
+        for subscriber in Subscriber._get_instances():
+            self.listener.publish(SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
+
+        self.listener.publish(PUBLISHER_EXIT_KEYWORD, "")
+        self.listener.finish()
 
     def update_config(self, **kwargs):
         self.logger.info('Updating config')

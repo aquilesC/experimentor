@@ -27,9 +27,10 @@
 """
 import numpy as np
 
-from experimentor import Q_
-from experimentor.lib.log import get_logger
 from experimentor.models.decorators import not_implemented
+from experimentor.lib.log import get_logger
+from experimentor import Q_
+
 
 logger = get_logger(__name__)
 
@@ -52,6 +53,7 @@ class BaseCamera:
         self.data_type = np.uint16 # The data type that the camera generates when acquiring images. It is very important to have it available in order to create the buffer and saving to disk.
 
         self.logger = get_logger(name=__name__)
+        self._threads = []
 
     def configure(self, properties: dict):
         self.logger.info('Updating config')

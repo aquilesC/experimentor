@@ -7,47 +7,46 @@
     from a queue with ``Queue.get()`` is particularly slow, much slower than serializing a numpy array with
     cPickle.
 """
+from multiprocessing import Process
 from time import sleep
 
 import zmq
+from experimentor.config.settings import PUBLISHER_PUBLISH_PORT, GENERAL_STOP_EVENT, SUBSCRIBER_EXIT_KEYWORD
 from experimentor.lib.log import get_logger
+from experimentor.models.listener import Listener
+from experimentor.models.models import MetaModel
 
 
-def subscribe(port, topic):
-    context = zmq.Context()
-    socket = context.socket(zmq.SUB)
-    socket.connect("tcp://localhost:%s" % port)
-    sleep(1)  # Takes a while for TCP connections to propagate
-    topic_filter = topic.encode('ascii')
-    socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
-    return socket
+class Subscriber(Process, metaclass=MetaModel):
+    def __init__(self, func, topic, publish_topic=None, args=None, kwargs=None):
+        super(Subscriber, self).__init__()
+        self.func = func
+        self.topic = topic
+        self.publish_topic = publish_topic
+        self.args = args
+        self.kwargs = kwargs
+        self.logger = get_logger()
+        self.logger.info(f'Starting subscriber for {func.__name__}')
 
+    def run(self):
+        context = zmq.Context()
+        socket = context.socket(zmq.SUB)
+        socket.connect(f"tcp://localhost:{PUBLISHER_PUBLISH_PORT}")
+        listener = Listener()
+        sleep(1)
+        topic_filter = self.topic.encode('utf-8')
+        socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
 
-def subscriber(func, topic, event, *args, **kwargs):
-    port = 5555
-    if 'port' in kwargs:
-        port = kwargs['port']
-        del kwargs['port']
+        while not GENERAL_STOP_EVENT.is_set():
+            topic = socket.recv_string()
+            data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
+            if isinstance(data, str):
+                if data == SUBSCRIBER_EXIT_KEYWORD:
+                    self.logger.info('Stopping Subscriber')
+                    break
+            ans = self.func(data, *self.args, **self.kwargs)
+            if self.publish_topic:
+                listener.publish(ans, self.publish_topic)
 
-    logger = get_logger(name=__name__)
-    context = zmq.Context()
-    socket = context.socket(zmq.SUB)
-    socket.connect("tcp://localhost:%s" % port)
-    sleep(1)  # Takes a while for TCP connections to propagate
-    topic_filter = topic.encode('ascii')
-    socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
-    logger.info('Subscribing {} to {}'.format(func.__name__, topic))
-    while not event.is_set():
-        topic = socket.recv_string()
-        data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
-        logger.debug('Got data of type {} on topic: {}'.format(type(data), topic))
-        if isinstance(data, str):
-            logger.debug('Data: {}'.format(data))
-            if data == 'stop':
-                logger.debug('Stopping subscriber on method {}'.format(func.__name__))
-                break
-
-        func(data, *args, **kwargs)
-    sleep(1)  # Gives enough time for the publishers to finish sending data before closing the socket
-    socket.close()
-    logger.debug('Stopped subscriber {}'.format(func.__name__))
+        sleep(1)  # Gives enough time for the publishers to finish sending data before closing the socket
+        socket.close()
