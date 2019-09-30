@@ -39,12 +39,27 @@ class Publisher(Process):
 
             .. TODO:: Find a way to start the publisher on a different port if the one specified is in use.
         """
-        self.logger.debug('Publisher initializing')
+        self.logger.info('Publisher initializing')
         context = zmq.Context()
+        publisher = context.socket(zmq.PUB)
+        try:
+            publisher.bind(f"tcp://*:{PUBLISHER_PUBLISH_PORT}")
+        except zmq.ZMQError:
+            self.logger.error('Por already in use. Trying to close and reconnect')
+            temp = context.socket(zmq.PUSH)
+            temp.connect(f"tcp://127.0.0.1:{PUBLISHER_PULL_PORT}")
+            temp.send_string("", zmq.SNDMORE)
+            temp.send_pyobj(PUBLISHER_EXIT_KEYWORD)
+            sleep(1)
+            self.logger.info('Retrying to open the publisher')
+            try:
+                publisher.bind(f"tcp://*:{PUBLISHER_PUBLISH_PORT}")
+            except zmq.ZMQError:
+                raise
+
         listener = context.socket(zmq.PULL)
         listener.bind(f"tcp://127.0.0.1:{PUBLISHER_PULL_PORT}")
-        publisher = context.socket(zmq.PUB)
-        publisher.bind(f"tcp://*:{PUBLISHER_PUBLISH_PORT}")
+
         sleep(1)  # To give time to binding to the given port
 
         while not self._event.is_set():

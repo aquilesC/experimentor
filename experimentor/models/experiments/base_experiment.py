@@ -25,8 +25,9 @@ from multiprocessing import Process, Event
 from time import sleep
 
 import yaml
+import zmq
 
-from experimentor.models.decorators import not_implemented
+from experimentor.models.decorators import not_implemented, make_async_thread
 from experimentor.lib.log import get_logger
 from experimentor.models.listener import Listener
 from experimentor.models.publisher import Publisher
@@ -52,6 +53,7 @@ class BaseExperiment:
         self.initialize_threads = []  # Threads to initialize several devices at the same time
         if filename:
             self.load_configuration(filename)
+
 
     def stop_publisher(self):
         """ Puts the proper data to the queue in order to stop the running publisher process
@@ -193,3 +195,21 @@ class BaseExperiment:
         self.logger.info('Finished the base experiment')
 
         self.publisher.stop()
+
+    @make_async_thread
+    def connect(self, method, topic):
+        context = zmq.Context()
+        socket = context.socket(zmq.SUB)
+        socket.connect(f"tcp://localhost:{PUBLISHER_PUBLISH_PORT}")
+        sleep(1)
+        topic_filter = topic.encode('utf-8')
+        socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
+        while not GENERAL_STOP_EVENT.is_set():
+            topic = socket.recv_string()
+            data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
+            if isinstance(data, str):
+                if data == SUBSCRIBER_EXIT_KEYWORD:
+                    self.logger.info(f'Stopping Subscriber {self}')
+                    break
+            method(data)
+

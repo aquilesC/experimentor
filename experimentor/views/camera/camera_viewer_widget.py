@@ -83,7 +83,9 @@ class CameraViewerWidget(QWidget):
         x2 = round(self.vline2.value())
 
         X = np.sort((x1, x2))
+        X[1] = abs(x1-x2)
         Y = np.sort((y1, y2))
+        Y[1] = abs(y1-y2)
         # Updates to the real values in camera space
         X += self.corner_roi[0]
         Y += self.corner_roi[1]
