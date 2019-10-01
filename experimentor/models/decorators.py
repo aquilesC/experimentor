@@ -26,6 +26,6 @@ def make_async_thread(func):
             args[0]._threads = []
         args[0]._threads.append([func.__name__, Thread(target=func, args=args, kwargs=kwargs)])
         args[0]._threads[-1][1].start()
-        logger.debug('In total there are {} threads'.format(len(args[0]._threads)))
+        logger.info('In total there are {} threads'.format(len(args[0]._threads)))
 
     return func_wrapper

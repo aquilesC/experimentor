@@ -1,4 +1,5 @@
-from pynta.model.exceptions import ModelException
+from experimentor.models.exceptions import ModelException
+
 
 class CameraException(ModelException):
     pass

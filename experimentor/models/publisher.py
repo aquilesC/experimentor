@@ -73,6 +73,7 @@ class Publisher(Process):
                 if isinstance(data, str) and data == PUBLISHER_EXIT_KEYWORD:
                     self.logger.info('Stopping the Publisiher')
                     self._event.set()
+            sleep(0.005)
 
     def stop(self):
         self._event.set()

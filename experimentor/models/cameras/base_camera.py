@@ -38,9 +38,11 @@ logger = get_logger(__name__)
 class BaseCamera:
     MODE_CONTINUOUS = 1
     MODE_SINGLE_SHOT = 0
+    MODE_LAST = 2
     ACQUISITION_MODE = {
         MODE_CONTINUOUS: 'Continuous',
-        MODE_SINGLE_SHOT: 'Single'
+        MODE_SINGLE_SHOT: 'Single',
+        MODE_LAST: 'Keep Last',
     }
 
     def __init__(self, camera):
