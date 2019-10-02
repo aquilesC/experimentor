@@ -1,12 +1,20 @@
 from distutils.core import setup
 
+from setuptools import find_packages
+
+with open('dispertech/__init__.py', 'r') as f:
+    version_line = f.readline()
+
+version = version_line.split('=')[1].strip().replace("'", "")
+
+with open('README.md', 'r') as f:
+    long_description = f.read()
+
 setup(
     name='experimentor',
-    version='0.2',
-    packages=['experimentor', 'experimentor.lib', 'experimentor.models', 'experimentor.models.daq',
-              'experimentor.models.laser', 'experimentor.drivers', 'experimentor.drivers.santec',
-              'experimentor.drivers.keysight', 'experimentor.experiment'],
-    url='https://github.com/uetke/experimentor',
+    version=version,
+    packages=find_packages(),
+    url='https://github.com/aquilesC/experimentor',
     license='MIT',
     author='Aquiles',
     author_email='aquiles@uetke.com',
@@ -16,4 +24,6 @@ setup(
         'numpy',
     ],
     python_requires='>=3.6',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
 )
