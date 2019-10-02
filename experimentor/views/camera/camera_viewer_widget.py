@@ -90,16 +90,16 @@ class CameraViewerWidget(QWidget):
 
         width = np.abs(x1-x2)
         height = np.abs(y1-y2)
-        x = np.min((x1, x2)) + self.corner_roi[1]
-        y = np.min((y1, y2)) + self.corner_roi[0]
+        x = np.min((x1, x2)) + self.corner_roi[0]
+        y = np.min((y1, y2)) + self.corner_roi[1]
         return (x, width), (y, height)
 
     def set_roi_lines(self, X, Y):
         self.corner_roi = [X[0], Y[0]]
         self.hline1.setValue(0)
         self.vline1.setValue(0)
-        self.hline2.setValue(X[1])  # To the last pixel
-        self.vline2.setValue(Y[1])  # To the last pixel
+        self.hline2.setValue(Y[1])  # To the last pixel
+        self.vline2.setValue(X[1])  # To the last pixel
 
     def setup_mouse_tracking(self):
         self.imv.setMouseTracking(True)
@@ -164,7 +164,7 @@ class CameraViewerWidget(QWidget):
         self.marker.setData(locations[:, 0], locations[:, 1], symbol='x', symbolBrush=brush)
 
     def update_image(self, image):
-        self.img.setImage(image.astype(np.int), autoLevels=False, autoRange=False, autoHistogramRange=False)
+        self.img.setImage(image.astype(np.int16), autoLevels=False, autoRange=False, autoHistogramRange=False)
         if self.first_image:
             self.do_auto_scale()
             self.first_image = False

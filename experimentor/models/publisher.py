@@ -61,10 +61,11 @@ class Publisher(Process):
         listener.bind(f"tcp://127.0.0.1:{PUBLISHER_PULL_PORT}")
 
         sleep(1)  # To give time to binding to the given port
-
+        i = 0
         while not self._event.is_set():
             topic = listener.recv_string()
             data = listener.recv_pyobj()
+            i += 1
             self.logger.debug(data)
             publisher.send_string(topic, zmq.SNDMORE)
             publisher.send_pyobj(data)
@@ -73,7 +74,6 @@ class Publisher(Process):
                 if isinstance(data, str) and data == PUBLISHER_EXIT_KEYWORD:
                     self.logger.info('Stopping the Publisiher')
                     self._event.set()
-            sleep(0.005)
 
     def stop(self):
         self._event.set()

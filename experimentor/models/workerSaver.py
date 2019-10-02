@@ -27,10 +27,10 @@
 
     .. sectionauthor:: Aquiles Carattino <aquiles@aquicarattino.com>
 """
-
 import h5py
 import numpy as np
 from datetime import datetime
+
 
 def workerSaver(fileData, meta, q):
     """Function that can be run in a separate thread for continuously save data to disk.
@@ -46,6 +46,7 @@ def workerSaver(fileData, meta, q):
 
     keep_saving = True  # Flag that will stop the worker function if running in a separate thread.
                         # Has to be submitted via the queue a string 'exit'
+
     g.create_dataset('metadata', data=meta.encode("ascii","ignore"))
     i = 0
     j = 0
@@ -84,6 +85,7 @@ def workerSaver(fileData, meta, q):
     f.flush()
     f.close()
     print('Finish writing to disk')
+
 
 def clearQueue(q):
     """Clears the queue by reading it.

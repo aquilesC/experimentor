@@ -12,10 +12,12 @@ class Listener:
         self.listener.connect(f"tcp://127.0.0.1:{PUBLISHER_PULL_PORT}")
         sleep(1)
         self.logger = get_logger()
+        self.i = 0
 
     def publish(self, data, topic=""):
         self.listener.send_string(topic, zmq.SNDMORE)
         self.listener.send_pyobj(data)
+        self.i += 1
 
     def finish(self):
         self.logger.info('Finishing listener')
