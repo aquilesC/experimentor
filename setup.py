@@ -2,7 +2,7 @@ from distutils.core import setup
 
 from setuptools import find_packages
 
-with open('dispertech/__init__.py', 'r') as f:
+with open('experimentor/__init__.py', 'r') as f:
     version_line = f.readline()
 
 version = version_line.split('=')[1].strip().replace("'", "")
