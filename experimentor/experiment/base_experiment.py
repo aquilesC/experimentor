@@ -1,24 +1,22 @@
 # -*- coding: utf-8 -*-
-
 """
     base_experiment
     ===============
     Base class for the experiment. It provides the basic functions that are common to other experiments.
-
-    .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
 """
 import logging
 
+from experimentor.lib.log import get_logger
 from .. import Q_
 from ..lib.device import Device
 from ..lib.actuator import Actuator
 from ..lib.sensor import Sensor
 from ..lib.general_functions import from_yaml_to_dict
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
-class Experiment(object):
+class Experiment:
     def __init__(self, measure):
         self.devices = {}
         self.actuators = {}

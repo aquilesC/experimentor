@@ -17,8 +17,6 @@
 
     .. TODO:: Check whether the serialization of objects with cPickle may be a bottleneck for performance.
 
-
-    :copyright:  Aquiles Carattino <aquiles@uetke.com>
     :license: GPLv3, see LICENSE for more details
 """
 from multiprocessing import Process, Event
@@ -53,7 +51,6 @@ class BaseExperiment:
         self.initialize_threads = []  # Threads to initialize several devices at the same time
         if filename:
             self.load_configuration(filename)
-
 
     def stop_publisher(self):
         """ Puts the proper data to the queue in order to stop the running publisher process
