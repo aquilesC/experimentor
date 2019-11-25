@@ -10,11 +10,14 @@ def try_except_dialog(func):
     """
     @wraps(func)
     def func_wrapper(*args, **kwargs):
+        print(args)
+        print(kwargs)
         try:
             new_values = func(*args, **kwargs)
         except Exception as e:
             message = QMessageBox()
-            message.setText(f"Got an error with {func.__name__}: \n{e}")
+            message.setWindowTitle(f"Error with {func.__name__}")
+            message.setText(f"{e}")
             message.exec()
             return
         return new_values
