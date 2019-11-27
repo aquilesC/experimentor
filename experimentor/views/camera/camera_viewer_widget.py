@@ -102,8 +102,8 @@ class CameraViewerWidget(QWidget):
 
     def setup_mouse_tracking(self):
         self.viewport.setMouseTracking(True)
-        self.viewport.getImageItem().scene().sigMouseMoved.connect(self.mouseMoved)
-        self.viewport.getImageItem().scene().contextMenu = None
+        self.img.scene().sigMouseMoved.connect(self.mouseMoved)
+        self.img.scene().contextMenu = None
 
     def keyPressEvent(self,key):
         """Triggered when there is a key press with some modifier.
