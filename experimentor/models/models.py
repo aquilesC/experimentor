@@ -1,10 +1,9 @@
 """
 MODELS
 ======
-Models are a buffer between user interactions and real devices. Models should define at least some basic common properties,
-for example how to read a value from a sensor and how to apply a value to an actuator.
+Models are a buffer between user interactions and real devices. Models should define at least some basic common
+properties, for example how to read a value from a sensor and how to apply a value to an actuator.
 Models can also take care of manipulating data, for example calculating an FFT and returning it to the user.
-
 """
 import weakref
 from copy import deepcopy
@@ -13,6 +12,9 @@ from experimentor.core.model_properties import ModelProp
 
 
 class MetaModel(type):
+    """ Meta Model type which will be responsible for keeping track of all the created models in the program.
+    This is very useful for things like automatically building a GUI, initializing/finishing all the devices, etc.
+    """
     def __init__(cls, name, bases, attrs):
         # Create class
         super(MetaModel, cls).__init__(name, bases, attrs)
