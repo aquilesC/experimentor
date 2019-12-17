@@ -33,9 +33,10 @@ class CameraViewerWidget(QWidget):
         self.marker.setBrush(255, 0, 0, 255)
         self.view.addItem(self.img)
         self.view.addItem(self.marker)
+        self.imv = pg.ImageView(view=self.view, imageItem=self.img)
 
         # Add everything to the widget
-        self.layout.addWidget(self.viewport)
+        self.layout.addWidget(self.imv)
         self.setLayout(self.layout)
 
         self.showCrosshair = False
@@ -101,9 +102,9 @@ class CameraViewerWidget(QWidget):
         self.vline2.setValue(X[1])  # To the last pixel
 
     def setup_mouse_tracking(self):
-        self.viewport.setMouseTracking(True)
-        self.img.scene().sigMouseMoved.connect(self.mouseMoved)
-        self.img.scene().contextMenu = None
+        self.imv.setMouseTracking(True)
+        self.imv.getImageItem().scene().sigMouseMoved.connect(self.mouseMoved)
+        self.imv.getImageItem().scene().contextMenu = None
 
     def keyPressEvent(self,key):
         """Triggered when there is a key press with some modifier.
@@ -148,10 +149,7 @@ class CameraViewerWidget(QWidget):
 
     def do_auto_scale(self):
         h, y = self.img.getHistogram()
-        if int(np.min(h)) != int(np.max(h)):
-            self.img.setLevels((int(np.min(h)),int(np.max(h))))
-        else:
-            self.img.setLevel((0, 255))
+        self.imv.setLevels(min(h),max(h))
 
     def draw_target_pointer(self, locations):
         """gets an image and draws a circle around the target locations.
