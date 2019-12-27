@@ -19,31 +19,93 @@
 
     :license: GPLv3, see LICENSE for more details
 """
+import weakref
 from multiprocessing import Process, Event
 from time import sleep
 
 import yaml
 import zmq
 
+from experimentor.core.exceptions import ExperimentDefinitionException
+from experimentor.core.signal import Signal
 from experimentor.models.decorators import not_implemented, make_async_thread
 from experimentor.lib.log import get_logger
 from experimentor.models.listener import Listener
-from experimentor.models.publisher import Publisher
-from experimentor.models.subscriber import Subscriber
-from experimentor.config.settings import *
+from experimentor.core.publisher import Publisher
+from experimentor.core.subscriber import Subscriber
+from experimentor.config import settings
+from experimentor.models.models import MetaModel
+
+_experiments = weakref.WeakSet()  # Stores all the defined experiments
+logger = get_logger(__name__)
 
 
-class BaseExperiment:
+class MetaExperiment(MetaModel):
+    """ Meta Model type which will be responsible for keeping track of all the created experiments. It will also be
+    responsible for registering the publisher, in order to have only one throughout the program and accessible from
+    other parts of the program. This meta class may be overkill, since in principle every program will be only one
+    experiment, but this is left as an effort to be future-proof.
+
+    .. note:: Defining meta classes may generate a feeling of obscurantism in the code. It may be wise to remove it and
+        find a simpler/straightforward approach.
+
+    """
+    def __init__(cls, name, bases, attrs):
+        # Create class
+        super(MetaExperiment, cls).__init__(name, bases, attrs)
+
+        if not attrs.get("_abstract", False):
+            _experiments.add(cls)
+
+    def __call__(cls, *args, **kwargs):
+        # Create instance (calls __init__ and __new__ methods)
+        inst = super(MetaExperiment, cls).__call__(*args, **kwargs)
+
+        # Check whether the publisher exists or instantiate it and append it to the class
+        if not hasattr(settings, 'publisher'):
+            logger.info("Publisher not yet initialized. Initializing it")
+            publisher = Publisher(settings.GENERAL_STOP_EVENT)
+            publisher.start()
+            settings.publisher = publisher
+        else:
+            publisher = settings.publisher
+
+        inst.publisher = publisher
+
+        # Store weak reference to instance. WeakSet will automatically remove
+        # references to objects that have been garbage collected
+        cls._instances.add(inst)
+
+        return inst
+
+    def _get_instances(cls, recursive=False):
+        """Get all instances of this class in the registry. If recursive=True
+        search subclasses recursively"""
+        instances = list(cls._instances)
+        if recursive:
+            for Child in cls.__subclasses__():
+                instances += Child._get_instances(recursive=recursive)
+
+        # Remove duplicates from multiple inheritance.
+        return list(set(instances))
+
+
+class BaseExperiment(metaclass=MetaExperiment):
+    _abstract = True
+
+
+class Experiment(BaseExperiment):
     """ Base class to define experiments. Should keep track of the basic methods needed regardless of the experiment
     to be performed. For instance, a way to start and a way to finalize a measurement.
     """
+    _abstract = True
+    start = Signal()
+
     def __init__(self, filename=None):
         self.config = {}  # Dictionary storing the configuration of the experiment
         self.logger = get_logger(name=__name__)
         self._threads = []
-        self.publisher = Publisher(GENERAL_STOP_EVENT)
-        self.publisher.start()
-
+        self.publisher = None
         self.listener = Listener()
 
         self._connections = []
@@ -161,12 +223,13 @@ class BaseExperiment:
         """ Needs to be overridden by child classes.
         """
         for subscriber in Subscriber._get_instances():
-            self.listener.publish(SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
+            self.listener.publish(settings.SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
             while subscriber.is_alive():
                 sleep(0.001)
 
-        self.listener.publish(PUBLISHER_EXIT_KEYWORD, "")
+        self.listener.publish(settings.PUBLISHER_EXIT_KEYWORD, "")
         self.listener.finish()
+        self.publisher.stop()
 
     def update_config(self, **kwargs):
         self.logger.info('Updating config')
@@ -176,6 +239,9 @@ class BaseExperiment:
     def __enter__(self):
         self.set_up()
         return self
+
+    def __del__(self):
+        self.finalize()
 
     def __exit__(self, *args):
         self.logger.info("Exiting the experiment")
@@ -197,16 +263,18 @@ class BaseExperiment:
     def connect(self, method, topic):
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
-        socket.connect(f"tcp://localhost:{PUBLISHER_PUBLISH_PORT}")
+        socket.connect(f"tcp://localhost:{settings.PUBLISHER_PUBLISH_PORT}")
         sleep(1)
         topic_filter = topic.encode('utf-8')
         socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
-        while not GENERAL_STOP_EVENT.is_set():
+        while not settings.GENERAL_STOP_EVENT.is_set():
             topic = socket.recv_string()
             data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
             if isinstance(data, str):
-                if data == SUBSCRIBER_EXIT_KEYWORD:
+                if data == settings.SUBSCRIBER_EXIT_KEYWORD:
                     self.logger.info(f'Stopping Subscriber {self}')
                     break
             method(data)
 
+    def __repr__(self):
+        return f"Experiment {id(self)}"

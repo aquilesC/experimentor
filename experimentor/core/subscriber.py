@@ -11,7 +11,7 @@ from multiprocessing import Process
 from time import sleep
 
 import zmq
-from experimentor.config.settings import PUBLISHER_PUBLISH_PORT, GENERAL_STOP_EVENT, SUBSCRIBER_EXIT_KEYWORD
+from experimentor.config import settings
 from experimentor.lib.log import get_logger
 from experimentor.models.listener import Listener
 from experimentor.models.models import MetaModel
@@ -31,17 +31,17 @@ class Subscriber(Process, metaclass=MetaModel):
     def run(self):
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
-        socket.connect(f"tcp://localhost:{PUBLISHER_PUBLISH_PORT}")
+        socket.connect(f"tcp://localhost:{settings.PUBLISHER_PUBLISH_PORT}")
         listener = Listener()
         sleep(1)
         topic_filter = self.topic.encode('utf-8')
         socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
 
-        while not GENERAL_STOP_EVENT.is_set():
+        while not settings.GENERAL_STOP_EVENT.is_set():
             topic = socket.recv_string()
             data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
             if isinstance(data, str):
-                if data == SUBSCRIBER_EXIT_KEYWORD:
+                if data == settings.SUBSCRIBER_EXIT_KEYWORD:
                     self.logger.info(f'Stopping Subscriber {self}')
                     break
             ans = self.func(data, *self.args, **self.kwargs)

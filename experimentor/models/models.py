@@ -8,7 +8,9 @@ Models can also take care of manipulating data, for example calculating an FFT a
 import weakref
 from copy import deepcopy
 
+from experimentor.core.exceptions import ModelDefinitionException
 from experimentor.core.model_properties import ModelProp
+from experimentor.core.signal import Signal
 
 
 class MetaModel(type):
@@ -18,6 +20,24 @@ class MetaModel(type):
     def __init__(cls, name, bases, attrs):
         # Create class
         super(MetaModel, cls).__init__(name, bases, attrs)
+
+        if '_signals' in attrs:
+            raise ModelDefinitionException('Experiments should not define the _signals attribute themselves')
+
+        cls._signals = {}
+        for base in bases:
+            if hasattr(base, '_signals'):
+                cls._signals.update(base._signals)
+
+        for attr, value in attrs.items():
+            if isinstance(value, Signal):
+                cls._signals[attr] = value
+                value._name = attr
+
+        if cls.__doc__:
+            cls.__doc__ += f"Available signals: {cls._signals}"
+        else:
+            cls.__doc__ = f"Available signals: {cls._signals}"
 
         # Initialize fresh instance storage
         cls._instances = weakref.WeakSet()
@@ -29,6 +49,9 @@ class MetaModel(type):
         # Store weak reference to instance. WeakSet will automatically remove
         # references to objects that have been garbage collected
         cls._instances.add(inst)
+
+        for name, signal in inst._signals.items():
+            signal._owner = id(inst)
 
         return inst
 
