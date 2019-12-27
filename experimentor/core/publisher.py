@@ -14,14 +14,12 @@ other processes listening.
 :copyright:  Aquiles Carattino <aquiles@uetke.com>
 :license: GPLv3, see LICENSE for more details
 """
-
 from multiprocessing import Process
 from time import sleep
 import zmq
 
 from experimentor.config import settings
 from experimentor.lib.log import get_logger
-
 
 
 class Publisher(Process):
@@ -69,7 +67,7 @@ class Publisher(Process):
             self.logger.debug(data)
             publisher.send_string(topic, zmq.SNDMORE)
             publisher.send_pyobj(data)
-            print(topic, data)
+
             if topic is "":
                 self.logger.info('Got Broad Topic')
                 if isinstance(data, str) and data == settings.PUBLISHER_EXIT_KEYWORD:
@@ -105,3 +103,7 @@ class Listener:
 
     def __enter__(self):
         return self
+
+
+publisher = Publisher(settings.GENERAL_STOP_EVENT)
+listener = Listener()

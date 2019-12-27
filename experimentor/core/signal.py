@@ -1,6 +1,7 @@
 import weakref
 
-from experimentor.models.listener import Listener
+from experimentor.core import listener
+from experimentor.core.subscriber import Subscriber
 
 _signals = weakref.WeakSet()
 
@@ -12,16 +13,21 @@ class Signal:
     _owner = None
 
     def __init__(self):
-        self.listener = Listener()
+        self.listener = listener
+        self.subscribers = {}
 
-    def __call__(self, *args, **kwargs):
-        print(args, kwargs)
-
-    def emit(self, data=None):
+    def emit(self, *args, **kwargs):
+        data = {}
+        if args:
+            data['args'] = args
+        if kwargs:
+            data['kwargs'] = kwargs
         self.listener.publish(data, topic=self.topic)
 
-    def connect(self, method):
-        pass
+    def connect(self, func):
+        s = Subscriber(func, self.topic)
+        s.start()
+        self.subscribers[func.__name__] = s
 
     def disconnect(self, method):
         pass

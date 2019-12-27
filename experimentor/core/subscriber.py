@@ -14,10 +14,10 @@ import zmq
 from experimentor.config import settings
 from experimentor.lib.log import get_logger
 from experimentor.models.listener import Listener
-from experimentor.models.models import MetaModel
+# from experimentor.models.models import MetaModel
 
 
-class Subscriber(Process, metaclass=MetaModel):
+class Subscriber(Process):
     def __init__(self, func, topic, publish_topic=None, args=None, kwargs=None):
         super(Subscriber, self).__init__()
         self.func = func
