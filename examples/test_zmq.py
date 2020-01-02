@@ -1,16 +1,17 @@
 from time import sleep
 
-from experimentor.config.settings import GENERAL_STOP_EVENT, PUBLISHER_EXIT_KEYWORD
+from experimentor.config import settings
+from experimentor.config.global_settings import PUBLISHER_EXIT_KEYWORD
+from experimentor.core.publisher import Publisher
+from experimentor.core.subscriber import Subscriber
 from experimentor.models.listener import Listener
-from experimentor.models.publisher import Publisher
-from experimentor.models.subscriber import Subscriber
 
 
 def test_subscriber(data):
     print(data)
 
 
-p = Publisher(GENERAL_STOP_EVENT)
+p = Publisher(settings.GENERAL_STOP_EVENT)
 p.start()
 s = Subscriber(test_subscriber, "Topic1", [], {})
 s.start()

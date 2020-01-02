@@ -58,10 +58,12 @@ class Publisher(Process):
         listener = context.socket(zmq.PULL)
         listener.bind(f"tcp://127.0.0.1:{settings.PUBLISHER_PULL_PORT}")
 
-        sleep(1)  # To give time to binding to the given port
+        sleep(2)  # To give time to binding to the given port
         i = 0
+        self.logger.info('Publisher ready to handle events')
         while not self._event.is_set():
             topic = listener.recv_string()
+            self.logger.debug(f"Got data on topic {topic}")
             data = listener.recv_pyobj()
             i += 1
             self.logger.debug(data)
@@ -104,6 +106,10 @@ class Listener:
     def __enter__(self):
         return self
 
+
+"""
+TODO: The definition of publisher and subscriber in here may be a very bad idea!
+"""
 
 publisher = Publisher(settings.GENERAL_STOP_EVENT)
 listener = Listener()

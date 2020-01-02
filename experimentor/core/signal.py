@@ -1,9 +1,16 @@
 import weakref
+from time import sleep
 
-from experimentor.core import listener
+import zmq
+
+from experimentor.config import settings
 from experimentor.core.subscriber import Subscriber
+from experimentor.lib.log import get_logger
 
 _signals = weakref.WeakSet()
+
+
+logger = get_logger(__name__)
 
 
 class Signal:
@@ -13,21 +20,39 @@ class Signal:
     _owner = None
 
     def __init__(self):
-        self.listener = listener
         self.subscribers = {}
+        self.pusher = None
 
     def emit(self, *args, **kwargs):
-        data = {}
-        if args:
-            data['args'] = args
-        if kwargs:
-            data['kwargs'] = kwargs
-        self.listener.publish(data, topic=self.topic)
+        if len(self.subscribers):
+            logger.debug(f'Emitting signal {self}(args={args})(kwargs={kwargs}) to {len(self.subscribers)} subscribers')
+            data = {}
+            if args:
+                data['args'] = args
+            if kwargs:
+                data['kwargs'] = kwargs
+
+            self.pusher.send_string(self.topic, zmq.SNDMORE)
+            self.pusher.send_pyobj(data)
+            return
+        logger.debug(f'Emitting {self} to 0 subscribers')
 
     def connect(self, func):
+        """ Connects a signal to a given function. If it is the first connection which is made, a socket will be created
+        to publish the data. This may be time consuming, sometimes when creating sockets it is necessary to wait for few
+        seconds. It also starts a subscriber for the given function, which may add even more delay to the instantiation.
+        """
+        if not self.pusher:
+            logger.debug(f'Pusher not yet initialized on {self}')
+            context = zmq.Context()
+            self.pusher = context.socket(zmq.PUSH)
+            self.pusher.connect(f"tcp://127.0.0.1:{settings.PUBLISHER_PULL_PORT}")
+            sleep(1)
+
+        logger.debug(f'Connecting {func.__name__} to {self}')
         s = Subscriber(func, self.topic)
         s.start()
-        self.subscribers[func.__name__] = s
+        self.subscribers.update({func.__name__: s})
 
     def disconnect(self, method):
         pass
