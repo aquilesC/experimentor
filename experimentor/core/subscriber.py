@@ -32,8 +32,9 @@ class Subscriber(Process, metaclass=MetaProcess):
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
         socket.connect(f"tcp://localhost:{settings.PUBLISHER_PUBLISH_PORT}")
-        listener = Listener()
-        sleep(1)
+        if self.publish_topic:
+            listener = Listener()
+            sleep(1)
         topic_filter = self.topic.encode('utf-8')
         socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
         self.logger.info(f'subscriber for {self.func.__name__} on topic {self.topic} ready')
@@ -51,6 +52,13 @@ class Subscriber(Process, metaclass=MetaProcess):
 
         sleep(1)  # Gives enough time for the publishers to finish sending data before closing the socket
         socket.close()
+
+    def stop(self):
+        listener = Listener()
+        listener.publish(settings.SUBSCRIBER_EXIT_KEYWORD, self.topic)
+
+    def __del__(self):
+        self.stop()
 
     def __str__(self):
         return f"Subscriber {self.func.__name__}"
