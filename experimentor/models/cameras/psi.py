@@ -12,7 +12,7 @@
 """
 import numpy as np
 
-from pynta.controller.devices.photonicscience.scmoscam import GEVSCMOS
+from experimentor.drivers.PhotonicScience.scmoscam import GEVSCMOS
 from .base_camera import BaseCamera
 
 NUMPY_MODES = {"L": np.uint8, "I;16": np.uint16}

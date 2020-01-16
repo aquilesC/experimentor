@@ -22,7 +22,7 @@
 """
 import numpy as np
 
-from pynta.controller.devices.hamamatsu.hamamatsu_camera import HamamatsuCamera
+from experimentor.drivers.hamamatsu.hamamatsu_camera import HamamatsuCamera
 from .base_camera import BaseCamera
 
 
