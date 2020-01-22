@@ -117,6 +117,10 @@ class Experiment(BaseExperiment):
     def stop_publisher(self):
         """ Puts the proper data to the queue in order to stop the running publisher process
         """
+        if not self.publisher:
+            self.logger.info('Publisher never started, nothing to do here')
+            return
+
         self.logger.info('Stopping the publisher')
         self.publisher.stop()
         self.stop_subscribers()
@@ -226,10 +230,16 @@ class Experiment(BaseExperiment):
             self.listener.publish(settings.SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
             while subscriber.is_alive():
                 sleep(0.001)
+        if self.listener:
+            self.listener.publish(settings.PUBLISHER_EXIT_KEYWORD, "")
+            self.listener.finish()
+        else:
+            self.logger.info('Listener not started and already finalizing. Nothing to do')
 
-        self.listener.publish(settings.PUBLISHER_EXIT_KEYWORD, "")
-        self.listener.finish()
-        self.publisher.stop()
+        if self.publisher:
+            self.publisher.stop()
+        else:
+            self.logger.info('Publisher not started and already finalizing. Nothing to do here')
 
     def update_config(self, **kwargs):
         self.logger.info('Updating config')
