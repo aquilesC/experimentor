@@ -164,7 +164,7 @@ class CameraViewerWidget(QWidget):
         self.marker.setData(locations[:, 0], locations[:, 1], symbol='x', symbolBrush=brush)
 
     def update_image(self, image=None):
-        if image:
+        if image is not None:
             self.img.setImage(image, autoLevels=False, autoRange=False, autoHistogramRange=False)
             if self.first_image:
                 self.do_auto_scale()
