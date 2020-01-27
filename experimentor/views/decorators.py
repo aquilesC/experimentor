@@ -10,8 +10,6 @@ def try_except_dialog(func):
     """
     @wraps(func)
     def func_wrapper(*args, **kwargs):
-        print(args)
-        print(kwargs)
         try:
             new_values = func(*args, **kwargs)
         except Exception as e:

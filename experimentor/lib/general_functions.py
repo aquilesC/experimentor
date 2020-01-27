@@ -91,6 +91,7 @@ def from_units_to_volts(self, value, calibration):
     offset = offset.m
     return (value - offset) / slope
 
+
 if __name__ == "__main__":
     d = from_yaml_to_devices('../../config/devices.yml',name='Santec Laser')
     print(d)

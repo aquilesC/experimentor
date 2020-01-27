@@ -30,7 +30,6 @@ class Experiment:
         for d in measure:
             setattr(self, d, measure[d])
 
-        print(__name__)
         self.logger = logging.getLogger(__name__)
         self.logger.info('creating an instance of Auxiliary')
             
