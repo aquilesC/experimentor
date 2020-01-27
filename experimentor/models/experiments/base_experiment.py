@@ -62,15 +62,15 @@ class MetaExperiment(MetaModel):
         inst = super(MetaExperiment, cls).__call__(*args, **kwargs)
 
         # Check whether the publisher exists or instantiate it and append it to the class
-        if not hasattr(settings, 'publisher'):
-            logger.info("Publisher not yet initialized. Initializing it")
-            publisher = Publisher(settings.GENERAL_STOP_EVENT)
-            publisher.start()
-            settings.publisher = publisher
-        else:
-            publisher = settings.publisher
-
-        inst.publisher = publisher
+        # if not hasattr(settings, 'publisher'):
+        #     logger.info("Publisher not yet initialized. Initializing it")
+        #     publisher = Publisher(settings.GENERAL_STOP_EVENT)
+        #     publisher.start()
+        #     settings.publisher = publisher
+        # else:
+        #     publisher = settings.publisher
+        #
+        # inst.publisher = publisher
 
         # Store weak reference to instance. WeakSet will automatically remove
         # references to objects that have been garbage collected
@@ -105,7 +105,8 @@ class Experiment(BaseExperiment):
         self.config = {}  # Dictionary storing the configuration of the experiment
         self.logger = get_logger(name=__name__)
         self._threads = []
-        self.publisher = None
+        publisher = Publisher(settings.GENERAL_STOP_EVENT)
+        publisher.start()
         self.listener = Listener()
 
         self._connections = []
