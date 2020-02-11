@@ -231,13 +231,13 @@ class Experiment(BaseExperiment):
             self.listener.publish(settings.SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
             while subscriber.is_alive():
                 sleep(0.001)
-        if self.listener:
+        if hasattr(self,'listener') and self.listener:
             self.listener.publish(settings.PUBLISHER_EXIT_KEYWORD, "")
             self.listener.finish()
         else:
             self.logger.info('Listener not started and already finalizing. Nothing to do')
 
-        if self.publisher:
+        if hasattr(self, 'publisher') and self.publisher:
             self.publisher.stop()
         else:
             self.logger.info('Publisher not started and already finalizing. Nothing to do here')
