@@ -21,8 +21,13 @@ class MetaModel(type):
         # Create class
         super(MetaModel, cls).__init__(name, bases, attrs)
 
-        if '_signals' in attrs:
-            raise ModelDefinitionException('Experiments should not define the _signals attribute themselves')
+        print(name, bases, attrs)
+
+        if name is not 'BaseModel' and not getattr(cls, 'finalize', None):
+            raise ModelDefinitionException('Models should always define a finalize method')
+
+        if name is not 'BaseModel' and not getattr(cls, 'initialize', None):
+            raise ModelDefinitionException('Models should always define an initialize method')
 
         cls._signals = {}
         for base in bases:
@@ -67,8 +72,8 @@ class MetaModel(type):
         return list(set(instances))
 
 
-class BaseModel(metaclass=MetaModel): pass
-
+class BaseModel(metaclass=MetaModel):
+    pass
 
 class Model:
     """

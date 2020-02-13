@@ -1,17 +1,21 @@
 from experimentor.models.exceptions import ModelException
 
 
-class CameraException(ModelException):
+class DeviceModelException(ModelException):
     pass
 
 
-class CameraNotFound(CameraException):
+class CameraException(DeviceModelException):
     pass
 
 
-class WrongCameraState(CameraException):
+class CameraNotFound(DeviceModelException):
     pass
 
 
-class CameraTimeout(CameraException):
+class WrongCameraState(DeviceModelException):
+    pass
+
+
+class CameraTimeout(DeviceModelException):
     pass
