@@ -63,10 +63,11 @@ class BaseCamera:
         update_roi = False
         update_exposure = False
         update_binning = False
+        update_gain = False
         for k, new_prop in properties.items():
             self.logger.debug('Updating {} to {}'.format(k, new_prop))
 
-            update_cam = True
+            update_cam = False
             if k in self.config:
                 old_prop = self.config[k]
                 if new_prop != old_prop:
@@ -81,6 +82,8 @@ class BaseCamera:
                     update_exposure = True
                 elif k in ['binning_x', 'binning_y']:
                     update_binning = True
+                elif k == 'gain':
+                    update_gain = True
 
         if update_cam:
             if update_roi:
@@ -104,6 +107,9 @@ class BaseCamera:
                 self.set_binning(properties['binning_x'], properties['binning_y'])
                 self.config.update({'binning_x': properties['binning_x'],
                                     'binning_y': properties['binning_y']})
+
+            if update_gain:
+                self.set_gain(properties['gain'])
 
     @not_implemented
     def initialize(self):
