@@ -86,9 +86,11 @@ class BaseCamera:
                     update_gain = True
 
         if update_cam:
+            self.logger.info('There are things to update in the new config')
             if update_roi:
                 X = sorted([properties['roi_x1'], properties['roi_x2']])
                 Y = sorted([properties['roi_y1'], properties['roi_y2']])
+                self.logger.info(f'Updating ROI {X}, {Y}')
                 self.set_ROI(X, Y)
                 self.config.update({'roi_x1': X[0],
                                     'roi_x2': X[1],
@@ -97,6 +99,7 @@ class BaseCamera:
 
             if update_exposure:
                 exposure = properties['exposure_time']
+                self.logger.info(f'Updating exposure to {exposure}')
                 if isinstance(exposure, str):
                     exposure = Q_(exposure)
 
@@ -104,11 +107,13 @@ class BaseCamera:
                 self.config['exposure_time'] = new_exp
 
             if update_binning:
+                self.logger.info('Updating binning')
                 self.set_binning(properties['binning_x'], properties['binning_y'])
                 self.config.update({'binning_x': properties['binning_x'],
                                     'binning_y': properties['binning_y']})
 
             if update_gain:
+                self.logger.info(f'Updating gain to {properties["gain"]}')
                 self.set_gain(properties['gain'])
 
     @not_implemented
@@ -217,6 +222,14 @@ class BaseCamera:
     @not_implemented
     def stopAcq(self):
         """Stops the acquisition without closing the connection to the camera."""
+        pass
+
+    @not_implemented
+    def set_gain(self, gain: float) -> float:
+        """Sets the gain on the camera, if possible
+
+        :param gain: a float representing the gain
+        """
         pass
 
     @not_implemented
