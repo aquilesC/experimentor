@@ -19,9 +19,11 @@
 
     :license: GPLv3, see LICENSE for more details
 """
+import os
 import weakref
 from multiprocessing import Process, Event
 from time import sleep
+from typing import Union
 
 import yaml
 import zmq
@@ -39,6 +41,30 @@ _experiments = weakref.WeakSet()  # Stores all the defined experiments
 logger = get_logger(__name__)
 
 
+class FormatPlaceholder:
+    def __init__(self, key):
+        self.key = key
+
+    def __format__(self, spec):
+        result = self.key
+        if spec:
+            result += ":" + spec
+        return "{" + result + "}"
+
+
+class FormatDict(dict):
+    """Simple solution to do partial formatting of strings. For example:
+
+    >>> a = 'fiber_end_{cartridge}_{i:04}.npy'
+    >>> cartridge = 123
+    >>> a.format_map(FormatDict(cartridge=cartridge))
+    'fiber_end_123_{i:04}.npy'
+    """
+
+    def __missing__(self, key):
+        return FormatPlaceholder(key)
+
+
 class MetaExperiment(MetaModel):
     """ Meta Model type which will be responsible for keeping track of all the created experiments. It will also be
     responsible for registering the publisher, in order to have only one throughout the program and accessible from
@@ -49,6 +75,7 @@ class MetaExperiment(MetaModel):
         find a simpler/straightforward approach.
 
     """
+
     def __init__(cls, name, bases, attrs):
         # Create class
         super(MetaExperiment, cls).__init__(name, bases, attrs)
@@ -155,7 +182,7 @@ class Experiment(BaseExperiment):
         self.logger.debug('Arguments: {}'.format(args))
         self.logger.debug('KWarguments: {}'.format(kwargs))
         self._connections.append({
-            'method':method.__name__,
+            'method': method.__name__,
             'topic': topic,
             'process': Process(target=Subscriber, args=arguments, kwargs=kwargs),
             'event': event,
@@ -181,12 +208,39 @@ class Experiment(BaseExperiment):
             self.logger.exception('Unhandled exception')
             raise
 
-    @property
-    def initializing(self):
-        """ Checks whether the devices are initializing or not. It does not distinguish between initialization not
-        triggered yet and initialization finalized.
+    @staticmethod
+    def make_filename(folder: Union[str, tuple], filename: str):
+        """This routine will check if the folder to store data exists, and create it if not. It will also check if the
+        file exists, if it does, it will increase by 1 a counter until an available name appears, and return both the
+        directory and the filename.
+
+        :param filename: if it contains a '{i}' or similar in its specification, it will use it as a counter, if not,
+            the number will be prepended to the filename
+        :param folder: either a string with the full path to the folder (bear in mind differences of folder separators)
+            or a tuple that will be joined using os.path.join
         """
-        return any([t.is_alive() for t in self.initialize_threads])
+        if isinstance(folder, tuple):
+            folder = os.path.join(*folder)
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
+
+        i = 0
+        base_filename = filename
+        if base_filename == filename.format(i=i):
+            base_filename = '{i}_' + filename
+        filename = base_filename.format(i=i)
+        if os.path.isfile(os.path.join(folder, filename)):
+            i += 1
+            filename = base_filename.format(i=i)
+
+        return folder, filename
+
+    # @property
+    # def initializing(self):
+    #     """ Checks whether the devices are initializing or not. It does not distinguish between initialization not
+    #     triggered yet and initialization finalized.
+    #     """
+    #     return any([t.is_alive() for t in self.initialize_threads])
 
     def clear_threads(self):
         """ Keep only the threads that are alive.
@@ -230,7 +284,7 @@ class Experiment(BaseExperiment):
             self.listener.publish(settings.SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
             while subscriber.is_alive():
                 sleep(0.001)
-        if hasattr(self,'listener') and self.listener:
+        if hasattr(self, 'listener') and self.listener:
             self.listener.publish(settings.PUBLISHER_EXIT_KEYWORD, "")
             self.listener.finish()
         else:
