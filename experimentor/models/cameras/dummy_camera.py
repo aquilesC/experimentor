@@ -18,6 +18,7 @@
 
 """
 import time
+
 import numpy as np
 
 from experimentor import Q_

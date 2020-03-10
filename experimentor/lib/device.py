@@ -18,11 +18,12 @@
 
     .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
 """
-import logging
 import importlib
-from .. import Q_
+import logging
+
 from .actuator import Actuator
 from .sensor import Sensor
+from .. import Q_
 
 logger = logging.getLogger(__name__)
 

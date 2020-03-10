@@ -10,10 +10,13 @@
 
 """
 import sys
+
 import yaml
+
 from .device import Device
 from .logger_with_time import logger
 from .. import Q_
+
 
 def from_yaml_to_devices(filename = "config/devices.yml", name=None):
     """ Reads a YAML file and returns a list of devices.

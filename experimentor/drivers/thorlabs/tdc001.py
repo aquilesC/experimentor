@@ -2,11 +2,11 @@ import ctypes
 import ctypes.util
 from ctypes.wintypes import DWORD, WORD
 
-from lantz import Feat, Action
 from lantz import Driver
+from lantz import Feat, Action
 from lantz import Q_
 
-from .data_types import MOT_DC_PIDParameters, TLI_HardwareInformation, MOT_HomingParameters,\
+from .data_types import MOT_DC_PIDParameters, TLI_HardwareInformation, MOT_HomingParameters, \
     MOT_JogParameters
 
 

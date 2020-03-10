@@ -27,10 +27,9 @@
 """
 import numpy as np
 
-from experimentor.models.decorators import not_implemented
-from experimentor.lib.log import get_logger
 from experimentor import Q_
-
+from experimentor.lib.log import get_logger
+from experimentor.models.decorators import not_implemented
 
 logger = get_logger(__name__)
 

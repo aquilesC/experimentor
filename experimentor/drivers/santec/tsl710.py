@@ -6,10 +6,9 @@
     It is not compliant with IEEE-488.2, but is available also to RS-232 and USB.
 """
 
-from lantz import Feat, DictFeat, Action
-from lantz.errors import InvalidCommand
-from pyvisa import constants
+from lantz import Feat, Action
 from lantz.messagebased import MessageBasedDriver
+from pyvisa import constants
 
 
 class tsl710(MessageBasedDriver):

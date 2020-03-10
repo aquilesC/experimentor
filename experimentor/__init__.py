@@ -1,6 +1,7 @@
 __version__ = '0.1.0'
 
 from multiprocessing import Event
+
 from pint import UnitRegistry
 
 ureg = UnitRegistry()

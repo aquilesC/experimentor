@@ -20,6 +20,7 @@
 
 import ctypes
 import ctypes.util
+
 import numpy
 
 # Hamamatsu constants.
@@ -826,7 +827,6 @@ if __name__ == "__main__":
 
         # Test acquisition.
         if 0:
-            import numpy as np
             import matplotlib.pyplot as plt
             hcam.startAcquisition()
             cnt = 1

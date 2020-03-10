@@ -8,7 +8,6 @@
 
     .. sectionauthor:: Aquiles Carattino <aquiles@aquicarattino.com>
 """
-from ...core.model_properties import ModelProp
 from ..models import Model
 
 

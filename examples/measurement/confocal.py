@@ -4,11 +4,12 @@ The goal is to prepare a sandbox experiment on this platform
 Section authors: Sanli Faez, Aquiles Carattino
 """
 
-import numpy as np
 from time import sleep
-from lantz import Q_
+
 import matplotlib.pyplot as plt
-from pharos.model.lib.general_functions import from_yaml_to_devices, from_yaml_to_dict
+import numpy as np
+from lantz import Q_
+from pharos.model.lib.general_functions import from_yaml_to_devices
 
 
 class measurement(object):

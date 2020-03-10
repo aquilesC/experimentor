@@ -6,8 +6,7 @@ C:\Program Files\Thorlabs\Kinesis
 Only copying the dll doesn't satisfy all the dependences. Apparently a full installation is needed, but didn't go
 into the details."""
 
-from ctypes import c_long, c_buffer, c_float, windll, byref, c_char, c_char_p, c_int
-import os
+from ctypes import c_long, windll, c_char_p
 
 
 class Flipper():

@@ -1,12 +1,6 @@
-import logging
-import multiprocessing
 from time import sleep
 
-from experimentor.config import settings
-from experimentor.core.publisher import Publisher
-from experimentor.lib.log import get_logger
 from experimentor.models.experiments.base_experiment import Experiment
-
 
 # logger = multiprocessing.log_to_stderr()
 # logger.setLevel(logging.DEBUG)

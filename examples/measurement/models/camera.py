@@ -6,8 +6,9 @@
     .. sectionauthor: Aquiles Carattino <aquiles@aquicarattino.com>
 """
 import time
-from .SimulateBrownian import SimBrownian
+
 from experimentor import Q_
+from .SimulateBrownian import SimBrownian
 from ._skeleton_camera import cameraBase
 
 

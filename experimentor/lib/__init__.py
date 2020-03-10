@@ -7,7 +7,7 @@
 
 """
 
-from .device import Device
 from .actuator import Actuator
-from .sensor import Sensor
+from .device import Device
 from .general_functions import *
+from .sensor import Sensor

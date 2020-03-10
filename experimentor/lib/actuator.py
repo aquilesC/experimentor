@@ -18,6 +18,7 @@
     .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
 """
 import logging
+
 from experimentor import Q_
 
 logger = logging.getLogger(__name__)

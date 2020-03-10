@@ -5,7 +5,6 @@
     the Kinesis installation folder, file Thorlabs.MotionControl.C_API.chm.
 """
 
-import ctypes
 import ctypes.util
 from ctypes.wintypes import DWORD, WORD
 

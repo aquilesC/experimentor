@@ -3,8 +3,6 @@
 
     .. sectionauthor:: Aquiles Carattino
 """
-from experimentor.models import Model
-from examples.measurement.models.camera import Camera
 from examples.measurement.experiment.track import Track
 
 tracking = Track.config_from_file()

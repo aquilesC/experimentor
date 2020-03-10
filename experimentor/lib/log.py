@@ -9,8 +9,8 @@
     :copyright:  Aquiles Carattino <aquiles@uetke.com>
     :license: AGPLv3, see LICENSE for more details
 """
-import logging, multiprocessing
-
+import logging
+import multiprocessing
 
 DEFAULT_FMT = "[%(levelname)8s] %(asctime)s %(name)s: %(message)s"
 

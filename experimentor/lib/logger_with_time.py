@@ -10,8 +10,9 @@
 
     .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
 """
-import sys
 import datetime
+import sys
+
 
 class logger:
     def __init__(self, file=None):

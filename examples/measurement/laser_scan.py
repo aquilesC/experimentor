@@ -7,15 +7,15 @@
     Ultimately it should also be able to change values of serial devices.
 
 """
-import numpy as np
 import logging
-
 from time import sleep
-from experimentor.experiment.base_experiment import Experiment
+
+import numpy as np
 
 from experimentor import Q_
-from experimentor.lib.general_functions import from_yaml_to_dict
 from experimentor.config import Config
+from experimentor.experiment.base_experiment import Experiment
+from experimentor.lib.general_functions import from_yaml_to_dict
 
 logger = logging.getLogger(__name__)
 

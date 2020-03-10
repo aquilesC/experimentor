@@ -1,11 +1,10 @@
 from time import sleep
 
 from experimentor import Q_
+from experimentor.config import settings
 from experimentor.core.publisher import Publisher, Listener
 from experimentor.core.subscriber import Subscriber
 from experimentor.models.cameras.basler import Camera
-from experimentor.config import settings
-
 
 cam = Camera('da')
 cam.initialize()

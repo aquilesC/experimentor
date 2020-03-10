@@ -8,10 +8,9 @@ import logging
 
 from experimentor.lib.log import get_logger
 from .. import Q_
-from ..lib.device import Device
 from ..lib.actuator import Actuator
+from ..lib.device import Device
 from ..lib.sensor import Sensor
-from ..lib.general_functions import from_yaml_to_dict
 
 logger = get_logger(__name__)
 

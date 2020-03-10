@@ -19,6 +19,7 @@ from experimentor import Q_
 from ._skeleton import Daq
 from ...config import Config
 from ...lib.general_functions import from_units_to_volts, from_volts_to_units
+
 logger = logging.getLogger(__name__)
 
 

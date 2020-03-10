@@ -27,9 +27,10 @@
 
     .. sectionauthor:: Aquiles Carattino <aquiles@aquicarattino.com>
 """
+from datetime import datetime
+
 import h5py
 import numpy as np
-from datetime import datetime
 
 
 def workerSaver(fileData, meta, q):
