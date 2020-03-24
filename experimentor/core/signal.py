@@ -6,6 +6,7 @@ import zmq
 from experimentor.config import settings
 from experimentor.core.subscriber import Subscriber
 from experimentor.lib.log import get_logger
+from experimentor.models.exceptions import SignalException
 
 _signals = weakref.WeakSet()
 
@@ -56,6 +57,20 @@ class Signal:
 
     def disconnect(self, method):
         pass
+
+    def set_owner(self, name: str):
+        """ Sets the owner of this signal. Should be unique throughout the program. A good idea is to use the ID of the
+        parent object.
+        """
+        if self._owner is not None:
+            raise SignalException(f'{self} already has an owner: {self._owner}')
+        if not isinstance(name, str):
+            name = str(name)
+        self._owner = name
+
+    @property
+    def owner(self):
+        return self._owner
 
     @property
     def topic(self):
