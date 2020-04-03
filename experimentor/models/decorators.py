@@ -2,6 +2,7 @@ from functools import wraps
 from threading import Thread
 
 from experimentor.lib.log import get_logger
+from experimentor.models.models import BaseModel
 
 
 def not_implemented(func):
@@ -34,6 +35,9 @@ def make_async_thread(func):
     def func_wrapper(*args, **kwargs):
         logger = get_logger(name=__name__)
         logger.info('Starting new thread for {}'.format(func.__name__))
+        if isinstance(args[0], BaseModel):
+            args[0].clean_up_threads()
+
         if not hasattr(args[0], '_threads'):
             args[0]._threads = []
 
