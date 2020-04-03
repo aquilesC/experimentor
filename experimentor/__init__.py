@@ -1,4 +1,4 @@
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 
 from multiprocessing import Event
 
@@ -8,3 +8,12 @@ ureg = UnitRegistry()
 Q_ = ureg.Quantity
 
 general_stop_event = Event()  # This event is the last resource to stop threads and processes
+
+__all__ = [
+    'config',
+    'core',
+    'drivers',
+    'lib',
+    'models',
+    'views',
+]
