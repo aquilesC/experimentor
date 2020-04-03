@@ -14,43 +14,52 @@ other processes listening.
 :copyright:  Aquiles Carattino <aquiles@uetke.com>
 :license: GPLv3, see LICENSE for more details
 """
+import atexit
 from multiprocessing import Process
 from time import sleep
 
+import numpy as np
 import zmq
 
 from experimentor.config import settings
+from experimentor.core.pusher import Pusher
 from experimentor.lib.log import get_logger
+from .meta import MetaProcess
+
+logger = get_logger(name=__name__)
 
 
-class Publisher(Process):
+class Publisher(Process, metaclass=MetaProcess):
     """ Publisher class in which the queue for publishing messages is defined and also a separated process is started.
     It is important to have a new process, since the serialization/deserialization of messages from the QUEUE may be
     a bottleneck for performance.
     """
-    def __init__(self, event):
-        super(Publisher, self).__init__()
-        self.logger = get_logger(name=__name__)
-        self._event = event   # This event is used to stop the process
+
+    def __init__(self, event, name=None):
+        super(Publisher, self).__init__(name=name or 'Publisher')
+        self._event = event  # This event is used to stop the process
+        self.running = False
+        atexit.register(self.stop)
 
     def run(self):
         """ Start a new process that will be responsible for broadcasting the messages.
 
             .. TODO:: Find a way to start the publisher on a different port if the one specified is in use.
         """
-        self.logger.info('Publisher initializing')
+        self.running = True
+        logger.info('Publisher initializing')
         context = zmq.Context()
         publisher = context.socket(zmq.PUB)
         try:
             publisher.bind(f"tcp://*:{settings.PUBLISHER_PUBLISH_PORT}")
         except zmq.ZMQError:
-            self.logger.error('Por already in use. Trying to close and reconnect')
+            logger.error('Por already in use. Trying to close and reconnect')
             temp = context.socket(zmq.PUSH)
             temp.connect(f"tcp://127.0.0.1:{settings.PUBLISHER_PULL_PORT}")
             temp.send_string("", zmq.SNDMORE)
             temp.send_pyobj(settings.PUBLISHER_EXIT_KEYWORD)
             sleep(1)
-            self.logger.info('Retrying to open the publisher')
+            logger.info('Retrying to open the publisher')
             try:
                 publisher.bind(f"tcp://*:{settings.PUBLISHER_PUBLISH_PORT}")
             except zmq.ZMQError:
@@ -61,56 +70,48 @@ class Publisher(Process):
 
         sleep(2)  # To give time to binding to the given port
         i = 0
-        self.logger.info('Publisher ready to handle events')
+        logger.info('Publisher ready to handle events')
         while not self._event.is_set():
             topic = listener.recv_string()
-            self.logger.debug(f"Got data on topic {topic}")
-            data = listener.recv_pyobj()
-            i += 1
-            self.logger.debug(data)
+            logger.debug(f"Got data on topic {topic}")
+            metadata = listener.recv_json(flags=0)
             publisher.send_string(topic, zmq.SNDMORE)
-            publisher.send_pyobj(data)
+            publisher.send_json(metadata, 0 | zmq.SNDMORE)
+            if metadata.get('numpy', False):
+                data = listener.recv(flags=0, copy=True, track=False)
+                publisher.send(data, 0, copy=True, track=False)
+            else:
+                data = listener.recv_pyobj()
+                publisher.send_pyobj(data)
+            i += 1
+            logger.debug(data)
 
             if topic is "":
-                self.logger.info('Got Broad Topic')
+                logger.info('Got Broad Topic')
                 if isinstance(data, str) and data == settings.PUBLISHER_EXIT_KEYWORD:
-                    self.logger.info('Stopping the Publisiher')
+                    logger.debug('Stopping the Publisiher')
                     self._event.set()
+        logger.info('Publisher Stopped')
+        self.running = False
 
     def stop(self):
-        with Listener() as listener:
-            listener.publish(settings.PUBLISHER_EXIT_KEYWORD)
-        self._event.set()
+        with Pusher() as pusher:
+            pusher.publish(settings.PUBLISHER_EXIT_KEYWORD)
+        self.join()
 
 
-class Listener:
-    def __init__(self):
-        context = zmq.Context()
-        self.listener = context.socket(zmq.PUSH)
-        self.listener.connect(f"tcp://127.0.0.1:{settings.PUBLISHER_PULL_PORT}")
-        sleep(1)
-        self.logger = get_logger()
-        self.i = 0
+def start_publisher():
+    """Wrapper function to start the publisher. It takes care of checking that there is only one publisher running by
+    storing it in the settings.
 
-    def publish(self, data, topic=""):
-        self.listener.send_string(topic, zmq.SNDMORE)
-        self.listener.send_pyobj(data)
-        self.i += 1
-
-    def finish(self):
-        self.logger.info('Finishing listener')
-        self.listener.close()
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.finish()
-
-    def __enter__(self):
-        return self
-
-
-"""
-TODO: The definition of publisher and subscriber in here may be a very bad idea!
-"""
-
-publisher = Publisher(settings.GENERAL_STOP_EVENT)
-listener = Listener()
+    .. TODO:: Find a good way of starting a publisher once per measurement cycle.
+    """
+    if hasattr(settings, 'publisher'):
+        logger.warning('Publisher already defined')
+        if settings.publisher.is_alive():
+            logger.warning('Publisher is alive, but trying to start another instance')
+            return
+        settings.publisher.start()
+    settings.publisher = Publisher(settings.GENERAL_STOP_EVENT)
+    settings.publisher.start()
+    settings.PUBLISHER_READY = True

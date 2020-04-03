@@ -10,12 +10,13 @@
 from multiprocessing import Process
 from time import sleep
 
+import numpy as np
 import zmq
 
 from experimentor.config import settings
 from experimentor.core.meta import MetaProcess
+from experimentor.core.pusher import Pusher
 from experimentor.lib.log import get_logger
-from experimentor.models.listener import Listener
 
 
 class Subscriber(Process, metaclass=MetaProcess):
@@ -34,15 +35,22 @@ class Subscriber(Process, metaclass=MetaProcess):
         socket = context.socket(zmq.SUB)
         socket.connect(f"tcp://localhost:{settings.PUBLISHER_PUBLISH_PORT}")
         if self.publish_topic:
-            listener = Listener()
-            sleep(1)
+            listener = Pusher()
         topic_filter = self.topic.encode('utf-8')
         socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
         self.logger.info(f'subscriber for {self.func.__name__} on topic {self.topic} ready')
 
         while not settings.GENERAL_STOP_EVENT.is_set():
             topic = socket.recv_string()
-            data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
+            self.logger.debug(f"Got data on topic {topic}")
+            metadata = socket.recv_json(flags=0)
+            if metadata.get('numpy', False):
+                msg = socket.recv(flags=0, copy=True, track=False)
+                buf = memoryview(msg)
+                data = np.frombuffer(buf, dtype=metadata['dtype'])
+                data = data.reshape(metadata['shape']).copy()
+            else:
+                data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
             if isinstance(data, str):
                 if data == settings.SUBSCRIBER_EXIT_KEYWORD:
                     self.logger.info(f'Stopping Subscriber {self}')
@@ -55,11 +63,10 @@ class Subscriber(Process, metaclass=MetaProcess):
         socket.close()
 
     def stop(self):
-        listener = Listener()
-        listener.publish(settings.SUBSCRIBER_EXIT_KEYWORD, self.topic)
+        with Pusher() as pusher:
+            pusher.publish(settings.SUBSCRIBER_EXIT_KEYWORD)
+        self.join()
 
-    def __del__(self):
-        self.stop()
 
     def __str__(self):
         return f"Subscriber {self.func.__name__}"
