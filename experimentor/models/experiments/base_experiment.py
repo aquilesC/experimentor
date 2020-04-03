@@ -19,6 +19,7 @@
 
     :license: GPLv3, see LICENSE for more details
 """
+import atexit
 import os
 import weakref
 from multiprocessing import Process, Event
@@ -27,15 +28,13 @@ from typing import Union
 
 import yaml
 import zmq
-
 from experimentor.config import settings
-from experimentor.core.publisher import Publisher
 from experimentor.core.signal import Signal
 from experimentor.core.subscriber import Subscriber
 from experimentor.lib.log import get_logger
 from experimentor.models.decorators import not_implemented, make_async_thread
 from experimentor.models.listener import Listener
-from experimentor.models.models import MetaModel
+from experimentor.models.models import MetaModel, BaseModel
 
 _experiments = weakref.WeakSet()  # Stores all the defined experiments
 logger = get_logger(__name__)
@@ -86,18 +85,6 @@ class MetaExperiment(MetaModel):
     def __call__(cls, *args, **kwargs):
         # Create instance (calls __init__ and __new__ methods)
         inst = super(MetaExperiment, cls).__call__(*args, **kwargs)
-
-        # Check whether the publisher exists or instantiate it and append it to the class
-        # if not hasattr(settings, 'publisher'):
-        #     logger.info("Publisher not yet initialized. Initializing it")
-        #     publisher = Publisher(settings.GENERAL_STOP_EVENT)
-        #     publisher.start()
-        #     settings.publisher = publisher
-        # else:
-        #     publisher = settings.publisher
-        #
-        # inst.publisher = publisher
-
         # Store weak reference to instance. WeakSet will automatically remove
         # references to objects that have been garbage collected
         cls._instances.add(inst)
@@ -116,7 +103,7 @@ class MetaExperiment(MetaModel):
         return list(set(instances))
 
 
-class BaseExperiment(metaclass=MetaExperiment):
+class BaseExperiment(BaseModel, metaclass=MetaExperiment):
     _abstract = True
 
 
@@ -128,11 +115,9 @@ class Experiment(BaseExperiment):
     start = Signal()
 
     def __init__(self, filename=None):
+        super().__init__()
         self.config = {}  # Dictionary storing the configuration of the experiment
         self.logger = get_logger(name=__name__)
-        self._threads = []
-        publisher = Publisher(settings.GENERAL_STOP_EVENT)
-        publisher.start()
         self.listener = Listener()
 
         self._connections = []
@@ -141,16 +126,7 @@ class Experiment(BaseExperiment):
         if filename:
             self.load_configuration(filename)
 
-    def stop_publisher(self):
-        """ Puts the proper data to the queue in order to stop the running publisher process
-        """
-        if not self.publisher:
-            self.logger.info('Publisher never started, nothing to do here')
-            return
-
-        self.logger.info('Stopping the publisher')
-        self.publisher.stop()
-        self.stop_subscribers()
+        atexit.register(self.finalize)
 
     def stop_subscribers(self):
         """ Puts the proper data into every alive subscriber in order to stop it.
@@ -242,10 +218,6 @@ class Experiment(BaseExperiment):
     #     """
     #     return any([t.is_alive() for t in self.initialize_threads])
 
-    def clear_threads(self):
-        """ Keep only the threads that are alive.
-        """
-        self._threads = [thread for thread in self._threads if thread[1].is_alive()]
 
     @property
     def num_threads(self):
@@ -281,19 +253,15 @@ class Experiment(BaseExperiment):
         """ Needs to be overridden by child classes.
         """
         for subscriber in Subscriber._get_instances():
+            logger.info('Finalizing', subscriber)
             self.listener.publish(settings.SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
             while subscriber.is_alive():
                 sleep(0.001)
-        if hasattr(self, 'listener') and self.listener:
-            self.listener.publish(settings.PUBLISHER_EXIT_KEYWORD, "")
-            self.listener.finish()
-        else:
-            self.logger.info('Listener not started and already finalizing. Nothing to do')
+            logger.info('Finlized', subscriber)
 
-        if hasattr(self, 'publisher') and self.publisher:
-            self.publisher.stop()
-        else:
-            self.logger.info('Publisher not started and already finalizing. Nothing to do here')
+        self.clean_up_threads()
+        for thread in self.list_alive_threads:
+            print(thread)
 
     def update_config(self, **kwargs):
         self.logger.info('Updating config')
@@ -303,9 +271,6 @@ class Experiment(BaseExperiment):
     def __enter__(self):
         self.set_up()
         return self
-
-    def __del__(self):
-        self.finalize()
 
     def __exit__(self, *args):
         self.logger.info("Exiting the experiment")
@@ -320,8 +285,6 @@ class Experiment(BaseExperiment):
             conn['process'].join()
 
         self.logger.info('Finished the base experiment')
-
-        self.publisher.stop()
 
     @make_async_thread
     def connect(self, method, topic):
