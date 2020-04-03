@@ -22,11 +22,14 @@ inherited by the rest of the code.
     the Experimentor happens.
 
 """
+from warnings import warn
+
 try:
     import PyDAQmx as nidaq
 except ModuleNotFoundError:
-    nidaq = False
-    print('Check whether you need to install PyDAQmx')
+    nidaq = None
+    warn('Check whether you need to install PyDAQmx')
+
 
 zmq_publisher_port = 5556
 zmq_listener_port = 5557
