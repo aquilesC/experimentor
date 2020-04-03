@@ -76,6 +76,8 @@ class Camera(BaseCamera):
         self.camera.RegisterConfiguration(pylon.SoftwareTriggerConfiguration(), pylon.RegistrationMode_ReplaceAll,
                                           pylon.Cleanup_Delete)
         self.set_acquisition_mode(self.MODE_SINGLE_SHOT)
+        self.get_size()
+        self.get_exposure()
 
     def set_acquisition_mode(self, mode):
         logger.info(f'Setting acquisition mode to {mode}')
@@ -225,14 +227,6 @@ class Camera(BaseCamera):
         if self.friendly_name:
             return self.friendly_name
         return "Basler Camera"
-
-    def __del__(self):
-        logger.debug('Deleting camera')
-        try:
-            self.camera.Close()
-        except:
-            pass
-
 
 
 if __name__ == '__main__':
