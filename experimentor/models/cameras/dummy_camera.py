@@ -25,6 +25,7 @@ from experimentor import Q_
 from experimentor.lib.log import get_logger
 from experimentor.models.cameras.simulate_brownian import SimBrownian
 from .base_camera import BaseCamera
+from ..decorators import avoid_repeat
 
 
 class Camera(BaseCamera):
@@ -58,6 +59,7 @@ class Camera(BaseCamera):
         """
         return True
 
+    @avoid_repeat
     def set_acquisition_mode(self, mode):
         """
         Set the readout mode of the camera: Single or continuous.
