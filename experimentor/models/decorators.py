@@ -48,6 +48,37 @@ def make_async_thread(func):
         args[0]._threads[-1][1].start()
         logger.info('In total there are {} threads'.format(len(args[0]._threads)))
 
+
     return func_wrapper
 
 
+def avoid_repeat(func):
+    @wraps(func)
+    def func_wrapper(cls, *args, **kwargs):
+        logger = get_logger(name=__name__)
+        logger.info(f'Checking if function {func.__name__} was already triggered')
+        update = False
+        if hasattr(cls, 'cache_setters'):
+            if len(args) >= 1:
+                for i, arg in enumerate(args[1:]):
+                    old_arg = args[0].cache_setters.get('args')[i]
+                    if arg != old_arg:
+                        update = True
+            if len(kwargs) > 1:
+                for key, value in kwargs.items():
+                    old_value = args[0].cache_setters.get('kwargs')[key]
+                    if value != old_value:
+                        update = True
+        else:
+            cls.cache_setters = dict()
+            update = True
+
+        if update:
+            cls.cache_setters.update({'args': args, 'kwargs': kwargs})
+            logger.info('Updating values')
+            return func
+        else:
+            logger.info('Nothing to update')
+            return lambda *args, **kwargs: None
+
+    return func_wrapper
