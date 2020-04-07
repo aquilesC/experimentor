@@ -15,6 +15,8 @@ class CameraViewerWidget(QWidget):
     specialTask = pyqtSignal()
     stopSpecialTask = pyqtSignal()
 
+    clicked_on_image = pyqtSignal([float, float])
+
     def __init__(self, parent=None):
         super().__init__(parent=parent)
         # General layout of the widget to hold an image and a histogram
@@ -35,6 +37,8 @@ class CameraViewerWidget(QWidget):
         self.view.addItem(self.marker)
         self.imv = pg.ImageView(view=self.view, imageItem=self.img)
 
+        self.scene().sigMouseClicked.connect(self.mouse_clicked)
+
         # Add everything to the widget
         self.layout.addWidget(self.imv)
         self.setLayout(self.layout)
@@ -51,6 +55,9 @@ class CameraViewerWidget(QWidget):
         self.first_image = True
 
         self.logger = get_logger()
+
+    def scene(self):
+        return self.img.scene()
 
     def setup_roi_lines(self, max_size):
         """Sets up the ROI lines surrounding the image.
@@ -184,3 +191,24 @@ class CameraViewerWidget(QWidget):
         self.cross_cut_setup = True
         self.crossCut = pg.InfiniteLine(angle=0, movable=False, pen={'color': 'g', 'width': 2})
         self.crossCut.setBounds((1, max_size))
+
+    def mouse_clicked(self, evnt):
+        modifiers = evnt.modifiers()
+        if modifiers == Qt.ControlModifier:
+            self.clicked_on_image.emit(self.img.mapFromScene(evnt.pos()).x(), self.img.mapFromScene(evnt.pos()).y())
+
+if __name__ == '__main__':
+    from PyQt5.QtWidgets import QApplication
+    import numpy as np
+
+    def click(x, y):
+        print(x, y)
+
+    fake_image = np.random.random((200, 200))
+    app = QApplication([])
+    win = CameraViewerWidget()
+    win.clicked_on_image.connect(click)
+    win.update_image(fake_image)
+    print(win.scene())
+    win.show()
+    app.exec()
