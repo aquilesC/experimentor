@@ -58,6 +58,7 @@ class BaseCamera(BaseModel):
 
         self.logger = get_logger(name=__name__)
         self._threads = []
+        self.temp_image = None
 
     def configure(self, properties: dict):
         self.logger.info('Updating config')
