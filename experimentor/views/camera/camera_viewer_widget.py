@@ -31,7 +31,6 @@ class CameraViewerWidget(DataViewWidget):
     """
 
     clicked_on_image = pyqtSignal([float, float])
-    default_layout = QVBoxLayout()
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
@@ -45,11 +44,9 @@ class CameraViewerWidget(DataViewWidget):
 
         self.scene().sigMouseClicked.connect(self.mouse_clicked)
 
-        button = QPushButton('Test', self)
         # Add everything to the widget
         layout = self.get_layout()
         layout.addWidget(self.imv)
-        layout.addWidget(button)
 
         self.show_roi_lines = False  # ROI lines are shown or not
         self.show_cross_hair = False  # Cross hair is shown or not
