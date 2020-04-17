@@ -38,9 +38,9 @@ class MetaModel(type):
         super(MetaModel, cls).__init__(name, bases, attrs)
 
         # Check whether the publisher exists or instantiate it and append it to the class
-        if not hasattr(settings, 'publisher'):
-            logger.info("Publisher not yet initialized. Initializing it")
-            start_publisher()
+        # if not hasattr(settings, 'publisher'):
+        #     logger.info("Publisher not yet initialized. Initializing it")
+        #     start_publisher()
 
         if {'_signals', 'signals'} & set(attrs):
             raise ModelDefinitionException('Experiments should not define the _signals nor signals attribute themselves')
