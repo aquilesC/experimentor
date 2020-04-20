@@ -22,6 +22,7 @@
 import atexit
 import os
 import weakref
+from abc import ABC
 from multiprocessing import Process, Event
 from time import sleep
 from typing import Union
@@ -109,8 +110,24 @@ class BaseExperiment(BaseModel, metaclass=MetaExperiment):
 
 class Experiment(BaseExperiment):
     """ Base class to define experiments. Should keep track of the basic methods needed regardless of the experiment
-    to be performed. For instance, a way to start and a way to finalize a measurement.
+    to be performed. For instance, a way to start and a way to finalize a measurement. This class is not meant to be
+    instantiated directly, but should be subclassed in each project.
+
+    Parameters
+    ----------
+    filename: str
+        Path to the config file that will be loaded. Ideally it should be an absolute path, to prevent problems. If you
+        submit a relative path, it will depend on how you are running the program if the file will be found or not.
+
+    Attributes
+    ----------
+    config: Properties
+        Properties object to store the values of the parameters of the experiments. See
+        :mod:`experimentor.models.properties` to understand the options and how it works
+    logger: logger
+        The logger of the experiment, this is for internal use only
     """
+
     _abstract = True
     start = Signal()
 
@@ -118,7 +135,6 @@ class Experiment(BaseExperiment):
         super().__init__()
         self.config = {}  # Dictionary storing the configuration of the experiment
         self.logger = get_logger(name=__name__)
-        self.listener = Listener()
 
         self._connections = []
         self.subscriber_events = []
@@ -127,6 +143,7 @@ class Experiment(BaseExperiment):
             self.load_configuration(filename)
 
         atexit.register(self.finalize)
+        self.is_alive = True
 
     def stop_subscribers(self):
         """ Puts the proper data into every alive subscriber in order to stop it.
@@ -261,7 +278,9 @@ class Experiment(BaseExperiment):
 
         self.clean_up_threads()
         for thread in self.list_alive_threads:
-            print(thread)
+            logger.debug(f'{thread} is alive when finalizing')
+
+        self.is_alive = False
 
     def update_config(self, **kwargs):
         self.logger.info('Updating config')
