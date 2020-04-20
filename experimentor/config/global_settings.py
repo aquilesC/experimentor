@@ -1,3 +1,17 @@
+"""
+    Global Settings
+    ---------------
+
+    Settings that should be available to any experimentor project. If you are starting a new project, you can use the
+    settings below as an example, and override the ones you think need to be overwritten. Especially things like:
+
+      - EXPERIMENT_MODEL
+      - EXPERIMENT_MODEL_INIT
+      - START_WINDOW
+
+    The only variables that will be considered are those written all in CAPITAL LETTERS.
+"""
+
 from multiprocessing import Event
 
 PUBLISHER_PUBLISH_PORT = 5556
