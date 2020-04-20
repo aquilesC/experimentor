@@ -37,11 +37,6 @@ class MetaModel(type):
         # Create class
         super(MetaModel, cls).__init__(name, bases, attrs)
 
-        # Check whether the publisher exists or instantiate it and append it to the class
-        # if not hasattr(settings, 'publisher'):
-        #     logger.info("Publisher not yet initialized. Initializing it")
-        #     start_publisher()
-
         if {'_signals', 'signals'} & set(attrs):
             raise ModelDefinitionException('Experiments should not define the _signals nor signals attribute themselves')
 
@@ -125,6 +120,10 @@ class BaseModel(metaclass=MetaModel):
         return ProxyObject(cls, *args, **kwargs)
 
     @abstractmethod
+    def initialize(self):
+        pass
+
+    @abstractmethod
     def finalize(self):
         pass
 
@@ -170,8 +169,6 @@ def _create_process_loop(cls, command_pipe, *args, **kwargs):
         command_pipe.send((result))
 
 
-
-
 class MetaDevice(MetaModel):
     """
     This is a Meta Class that should be used only by devices and not by the experiment itself. It is only to give
@@ -188,10 +185,3 @@ class MetaDevice(MetaModel):
         inst = super(MetaDevice, cls).__call__(*args, **kwargs)
         cls._devices.add(inst)
         return inst
-
-
-class ModelDevice(BaseModel, metaclass=MetaDevice):
-    """ All models for devices should inherit from this class.
-    """
-    def __init__(self):
-        super().__init__()
