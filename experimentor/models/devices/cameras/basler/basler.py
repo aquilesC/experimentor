@@ -3,7 +3,7 @@ from pypylon import pylon, _genicam
 from experimentor import Q_
 from experimentor.lib.log import get_logger
 from experimentor.models.devices.cameras.base_camera import BaseCamera
-from experimentor.models.devices.cameras.exceptions import CameraNotFound
+from experimentor.models.devices.cameras.exceptions import CameraNotFound, CameraException
 
 
 class BaslerCamera(BaseCamera):
@@ -11,6 +11,11 @@ class BaslerCamera(BaseCamera):
         super().__init__(camera)
         self.logger = get_logger(__name__)
         self.friendly_name = ''
+        self.config.link({
+            'auto_exposure': ['get_auto_exposure', 'set_auto_exposure'],
+            'auto_gain': ['get_auto_gain', 'set_auto_gain']
+        })
+        self.mode = self.MODE_SINGLE_SHOT
 
     def initialize(self):
         """ Initializes the communication with the camera. Get's the maximum and minimum width. It also forces
@@ -28,45 +33,135 @@ class BaslerCamera(BaseCamera):
 
         for device in devices:
             if self.camera in device.GetFriendlyName():
-                self.camera = pylon.InstantCamera()
-                self.camera.Attach(tl_factory.CreateDevice(device))
-                self.camera.Open()
+                self._driver = pylon.InstantCamera()
+                self._driver.Attach(tl_factory.CreateDevice(device))
+                self._driver.Open()
                 self.friendly_name = device.GetFriendlyName()
 
-        if not self.camera:
-            msg = f'{self.camera} not found. Please check your config file and cameras connected'
+        if not self._driver:
+            msg = f'Basler {self.camera} not found. Please check if the camera is connected'
             self.logger.error(msg)
             raise CameraNotFound(msg)
 
-        self.logger.info(f'Loaded camera {self.camera.GetDeviceInfo().GetModelName()}')
+        self.logger.info(f'Loaded camera {self._driver.GetDeviceInfo().GetModelName()}')
 
-        self.camera.RegisterConfiguration(pylon.SoftwareTriggerConfiguration(), pylon.RegistrationMode_ReplaceAll,
-                                          pylon.Cleanup_Delete)
+        self._driver.RegisterConfiguration(pylon.SoftwareTriggerConfiguration(), pylon.RegistrationMode_ReplaceAll,
+                                           pylon.Cleanup_Delete)
 
         self.config.fetch_all()
 
     def get_exposure(self) -> Q_:
         try:
-            exposure = float(self.camera.ExposureTime.ToString()) * Q_('us')
+            exposure = float(self._driver.ExposureTime.ToString()) * Q_('us')
             return exposure
         except _genicam.TimeoutException:
             self.logger.error('Timeout getting the exposure')
             return self.config['exposure']
 
     def set_exposure(self, exposure: Q_):
-        self.camera.ExposureTime.SetValue(exposure.m_as('us'))
+        self.logger.info('Setting exposure to {:~}'.format(exposure))
+        try:
+            self._driver.ExposureTime.SetValue(exposure.m_as('us'))
+        except _genicam.TimeoutException:
+            self.logger.error(f'Timed out setting the exposure to {exposure}')
 
     def set_gain(self, gain: float):
         self.logger.info(f'Setting gain to {gain}')
         try:
-            self.camera.Gain.SetValue(gain)
-        except _genicam.RuntimeException:
+            self._driver.Gain.SetValue(gain)
+        except _genicam.TimeoutException:
             self.logger.error('Problem setting the gain')
 
     def get_gain(self) -> float:
         try:
-            self.gain = float(self.camera.Gain.Value)
-            return self.gain
+            return float(self._driver.Gain.Value)
         except _genicam.TimeoutException:
             self.logger.error('Timeout while reading the gain from the camera')
             return self.config['gain']
+
+    def get_acquisition_mode(self):
+        return self.mode
+
+    def set_acquisition_mode(self, mode):
+        if self._driver.IsGrabbing():
+            self.logger.warning(f'{self} Changing acquisition mode for a grabbing camera')
+
+        self.logger.info(f'{self.friendly_name} Setting acquisition mode to {mode}')
+        if mode == self.MODE_CONTINUOUS:
+            self.logger.debug(f'Setting buffer to {self._driver.MaxNumBuffer.Value}')
+            self.mode = mode
+        elif mode == self.MODE_SINGLE_SHOT:
+            self.logger.debug(f'Setting buffer to 1')
+            self.mode = mode
+
+    def get_auto_exposure(self) -> str:
+        return self._driver.ExposureAuto.Value
+
+    def set_auto_exposure(self, mode: str):
+        modes = ('Off', 'Once', 'Continuous')
+        if mode not in modes:
+            raise ValueError(f'Mode must be one of {modes} and not {mode}')
+        self._driver.ExposureAuto.SetValue(mode)
+
+    def get_auto_gain(self) -> str:
+        return self._driver.GainAuto.Value
+
+    def set_auto_gain(self, mode):
+        modes = ('Off', 'Once', 'Continuous')
+        if mode not in modes:
+            raise ValueError(f'Mode must be one of {modes} and not {mode}')
+        self._driver.GainAuto.SetValue(mode)
+
+    def set_ROI(self, X, Y):
+        width = int(X[1] - X[1] % 4)
+        x_pos = int(X[0] - X[0] % 4)
+        height = int(Y[1] - Y[1] % 2)
+        y_pos = int(Y[0] - Y[0] % 2)
+        self.logger.info(f'Updating ROI: (x, y, width, height) = ({x_pos}, {y_pos}, {width}, {height})')
+        self._driver.OffsetX.SetValue(0)
+        self._driver.OffsetY.SetValue(0)
+        self._driver.Width.SetValue(self.config['max_width'])
+        self._driver.Height.SetValue(self.config['max_height'])
+        self.logger.debug(f'Setting width to {width}')
+        self._driver.Width.SetValue(width)
+        self.logger.debug(f'Setting Height to {height}')
+        self._driver.Height.SetValue(height)
+        self.logger.debug(f'Setting X offset to {x_pos}')
+        self._driver.OffsetX.SetValue(x_pos)
+        self.logger.debug(f'Setting Y offset to {y_pos}')
+        self._driver.OffsetY.SetValue(y_pos)
+        self.X = (x_pos, x_pos + width)
+        self.Y = (y_pos, y_pos + width)
+        self.width = self._driver.Width.Value
+        self.height = self._driver.Height.Value
+        return (x_pos, x_pos+width), (y_pos, y_pos+height)
+
+    def get_ROI(self):
+        offset_X = self._driver.OffsetX.Value
+        offset_Y = self._driver.OffsetY.Value
+        width = self._driver.Width.Value - 1
+        height = self._driver.Height.Value - 1
+        return ((offset_X, offset_X+width),(offset_Y, offset_Y+height))
+
+    def get_ccd_height(self):
+        return self._driver.Height.Max
+
+    def get_ccd_width(self):
+        return self._driver.Width.Max
+
+    def __str__(self):
+        if self.friendly_name:
+            return f"Camera {self.friendly_name}"
+        return super().__str__()
+
+if __name__ == '__main__':
+    cam = BaslerCamera('da')
+    cam.initialize()
+    print(cam.config)
+    cam.config['roi'] = ((16, 1200-1), (16, 800-1))
+    # print(cam.config.to_update())
+    cam.config.apply_all()
+    print(cam.config)
+    # cam.clear_ROI()
+    # cam.config.fetch_all()
+    # print(cam.config)

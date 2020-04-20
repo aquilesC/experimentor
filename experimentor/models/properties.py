@@ -156,7 +156,7 @@ class Properties:
                     if setter_name:
                         new_value = value['new_value'] or value['value']
                         setter = rgetattr(self._parent, setter_name)
-                        value = setter(new_value)
+                        value = setter(*new_value)
                         if value is None:
                             value = self.fetch(property)
                         self.upgrade({property: value})

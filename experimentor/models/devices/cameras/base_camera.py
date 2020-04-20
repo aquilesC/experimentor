@@ -87,7 +87,7 @@ class BaseCamera(ModelDevice):
             'binning': ['get_binning', 'get_binning'],
             'acquisition_mode': ['get_acquisition_mode', 'set_acquisition_mode'],
             'max_width': 'get_ccd_width',
-            'max_height': 'get_ccd_width',
+            'max_height': 'get_ccd_height',
         })
 
     def configure(self, properties: dict):
@@ -199,8 +199,8 @@ class BaseCamera(ModelDevice):
         """ Sets up the ROI. Not all cameras are 0-indexed, so this is an important
         place to define the proper ROI.
 
-        :param list X: array type with the coordinates for the ROI X[0], X[1]
-        :param list Y: array type with the coordinates for the ROI Y[0], Y[1]
+        :param list or tuple X: array type with the coordinates for the ROI X[0], X[1]
+        :param list or tuple Y: array type with the coordinates for the ROI Y[0], Y[1]
         :return: X, Y lists with the current ROI information
         """
         pass
@@ -213,7 +213,7 @@ class BaseCamera(ModelDevice):
     def clear_ROI(self):
         """ Clears the ROI by setting it to the maximum available area.
         """
-        self.set_ROI([0, self.max_width], [0, self.max_height])
+        self.set_ROI((0, self.config['max_width']-1), (0, self.config['max_height']-1))
 
     @not_implemented
     def get_serial_number(self):
