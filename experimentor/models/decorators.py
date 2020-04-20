@@ -9,7 +9,7 @@ def not_implemented(func):
     @wraps(func)
     def func_wrapper(cls, *args, **kwargs):
         logger = get_logger(__name__)
-        logger.warning(f'{cls}.{func.__name__} Not Implemented')
+        logger.warning(f'{func.__name__} from {cls} not Implemented')
         return func(cls, *args, **kwargs)
     return func_wrapper
 
