@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/aquilesC/experimentor.svg?branch=master)](https://travis-ci.com/aquilesC/experimentor)
+
 # Experimentor v0.2 #
 
 **A flexible package for experiment control and automation**
