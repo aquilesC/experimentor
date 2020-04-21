@@ -2,6 +2,9 @@
 
 [![Documentation Status](https://readthedocs.org/projects/experimentor/badge/?version=latest)](https://experimentor.readthedocs.io/en/latest/?badge=latest)
 
+[![codecov](https://codecov.io/gh/aquilesC/experimentor/branch/master/graph/badge.svg)](https://codecov.io/gh/aquilesC/experimentor)
+
+
 # Experimentor v0.2 #
 
 **A flexible package for experiment control and automation**
