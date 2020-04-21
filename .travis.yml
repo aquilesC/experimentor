@@ -17,5 +17,8 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy h5py pint pyserial pyvisa pyzmq pyvisa-py pyyaml
   - conda activate test-environment
   - python setup.py install
+  - pip install coverage codecov
 script:
-  - python -m unittest tests
+  - coverage run -m unittest tests
+after_success:
+  - codecov
