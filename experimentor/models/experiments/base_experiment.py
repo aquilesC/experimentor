@@ -34,7 +34,6 @@ from experimentor.core.signal import Signal
 from experimentor.core.subscriber import Subscriber
 from experimentor.lib.log import get_logger
 from experimentor.models.decorators import not_implemented, make_async_thread
-from experimentor.models.listener import Listener
 from experimentor.models.models import MetaModel, BaseModel
 
 _experiments = weakref.WeakSet()  # Stores all the defined experiments
