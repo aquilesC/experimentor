@@ -22,19 +22,18 @@
 import atexit
 import os
 import weakref
-from abc import ABC
 from multiprocessing import Process, Event
 from time import sleep
 from typing import Union
 
 import yaml
-import zmq
-from experimentor.config import settings
+
 from experimentor.core.signal import Signal
 from experimentor.core.subscriber import Subscriber
 from experimentor.lib.log import get_logger
-from experimentor.models.decorators import not_implemented, make_async_thread
-from experimentor.models.models import MetaModel, BaseModel
+from experimentor.models.decorators import not_implemented
+from experimentor.models.models import BaseModel
+from experimentor.models.meta import MetaModel
 
 _experiments = weakref.WeakSet()  # Stores all the defined experiments
 logger = get_logger(__name__)
@@ -114,7 +113,7 @@ class Experiment(BaseExperiment):
 
     Parameters
     ----------
-    filename: str
+    filename: str or None
         Path to the config file that will be loaded. Ideally it should be an absolute path, to prevent problems. If you
         submit a relative path, it will depend on how you are running the program if the file will be found or not.
 
@@ -126,7 +125,6 @@ class Experiment(BaseExperiment):
     logger: logger
         The logger of the experiment, this is for internal use only
     """
-
     _abstract = True
     start = Signal()
 
@@ -227,14 +225,6 @@ class Experiment(BaseExperiment):
 
         return folder, filename
 
-    # @property
-    # def initializing(self):
-    #     """ Checks whether the devices are initializing or not. It does not distinguish between initialization not
-    #     triggered yet and initialization finalized.
-    #     """
-    #     return any([t.is_alive() for t in self.initialize_threads])
-
-
     @property
     def num_threads(self):
         return len(self._threads)
@@ -268,12 +258,12 @@ class Experiment(BaseExperiment):
     def finalize(self):
         """ Needs to be overridden by child classes.
         """
-        for subscriber in Subscriber._get_instances():
-            logger.info('Finalizing', subscriber)
-            self.listener.publish(settings.SUBSCRIBER_EXIT_KEYWORD, subscriber.topic)
+        self.logger.info(f'Going to finalize {len(self.subscribers)} subscribers')
+        for subscriber in self.subscribers:
+            subscriber.stop()
             while subscriber.is_alive():
                 sleep(0.001)
-            logger.info('Finlized', subscriber)
+            logger.info(f'Finalized {subscriber}')
 
         self.clean_up_threads()
         for thread in self.list_alive_threads:
@@ -293,33 +283,7 @@ class Experiment(BaseExperiment):
     def __exit__(self, *args):
         self.logger.info("Exiting the experiment")
         self.finalize()
-
-        self.logger.debug('Number of open connections: {}'.format(len(self.connections)))
-        for event in self.subscriber_events:
-            event.set()
-
-        for conn in self.connections:
-            self.logger.debug('Waiting for {} to finish'.format(conn['method']))
-            conn['process'].join()
-
         self.logger.info('Finished the base experiment')
-
-    @make_async_thread
-    def connect(self, method, topic):
-        context = zmq.Context()
-        socket = context.socket(zmq.SUB)
-        socket.connect(f"tcp://localhost:{settings.PUBLISHER_PUBLISH_PORT}")
-        sleep(1)
-        topic_filter = topic.encode('utf-8')
-        socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
-        while not settings.GENERAL_STOP_EVENT.is_set():
-            topic = socket.recv_string()
-            data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
-            if isinstance(data, str):
-                if data == settings.SUBSCRIBER_EXIT_KEYWORD:
-                    self.logger.info(f'Stopping Subscriber {self}')
-                    break
-            method(data)
 
     def __repr__(self):
         return f"Experiment {id(self)}"

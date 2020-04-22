@@ -11,8 +11,8 @@
     .. sectionauthor:: Aquiles Carattino <aquiles@aquicarattino.com>
 """
 import numpy as np
-
 from UUTrack.Controller.devices.PhotonicScience.scmoscam import GEVSCMOS
+
 from ._skeleton import cameraBase
 
 NUMPY_MODES = {"L":np.uint8, "I;16":np.uint16}

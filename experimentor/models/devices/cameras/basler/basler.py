@@ -3,7 +3,7 @@ from pypylon import pylon, _genicam
 from experimentor import Q_
 from experimentor.lib.log import get_logger
 from experimentor.models.devices.cameras.base_camera import BaseCamera
-from experimentor.models.devices.cameras.exceptions import CameraNotFound, CameraException
+from experimentor.models.devices.cameras.exceptions import CameraNotFound
 
 
 class BaslerCamera(BaseCamera):

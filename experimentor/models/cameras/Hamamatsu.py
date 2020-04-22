@@ -20,8 +20,8 @@
     .. sectionauthor:: Aquiles Carattino <aquiles@aquicarattino.com>
 """
 import numpy as np
-
 from UUTrack.Controller.devices.hamamatsu.hamamatsu_camera import HamamatsuCamera
+
 from ._skeleton import cameraBase
 
 
