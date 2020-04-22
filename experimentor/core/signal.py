@@ -1,42 +1,51 @@
-import weakref
-from time import sleep
-
-import zmq
-
-from experimentor.config import settings
+from experimentor.core.pusher import Pusher
 from experimentor.core.subscriber import Subscriber
 from experimentor.lib.log import get_logger
-from experimentor.models.exceptions import SignalException
-
-_signals = weakref.WeakSet()
 
 
 logger = get_logger(__name__)
 
 
 class Signal:
+    instance = None
+    owner = None
+    name = None
     """ Base signal which implements the common pattern for defining, emiting and connecting a signal
     """
-    _name = None
-    _owner = None
-
-    def __init__(self):
-        self.subscribers = {}
+    def __set_name__(self, owner, name):
+        self.name = name
+        self.owner = owner
+        self.instace = None
         self.pusher = None
+        self.subscribers = []
+        if owner is not None:
+            if not hasattr(owner, '_signals'):
+                owner._signals = {self.name: self}
+            else:
+                owner._signals.update({self.name: self})
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+        self.instace = instance
+        return instance._signals[self.name]
+
+    def __set__(self, instance, value):
+        raise AttributeError('Signals can\'t be overwritten')
 
     def emit(self, *args, **kwargs):
         if len(self.subscribers):
-            logger.debug(f'Emitting signal {self}(args={args})(kwargs={kwargs}) to {len(self.subscribers)} subscribers')
+            logger.debug(f'Emitting {self}(args={args})(kwargs={kwargs}) to {len(self.subscribers)} subscribers')
             data = {}
             if args:
                 data['args'] = args
             if kwargs:
                 data['kwargs'] = kwargs
 
-            self.pusher.send_string(self.topic, zmq.SNDMORE)
-            self.pusher.send_pyobj(data)
+            self.pusher.publish(data, self.topic)
+
             return
-        logger.debug(f'Emitting {self} to 0 subscribers')
+        logger.debug(f'Emitting {self} to {len(self.subscribers)} subscribers')
 
     def connect(self, func):
         """ Connects a signal to a given function. If it is the first connection which is made, a socket will be created
@@ -45,39 +54,31 @@ class Signal:
         """
         if not self.pusher:
             logger.debug(f'Pusher not yet initialized on {self}')
-            context = zmq.Context()
-            self.pusher = context.socket(zmq.PUSH)
-            self.pusher.connect(f"tcp://127.0.0.1:{settings.PUBLISHER_PULL_PORT}")
-            sleep(1)
+            self.pusher = Pusher()
 
         logger.debug(f'Connecting {func.__name__} to {self}')
         s = Subscriber(func, self.topic)
         s.start()
-        self.subscribers.update({func.__name__: s})
+        self.instace._subscribers.append(s)
+        self.subscribers.append(func.__name__)
 
     def disconnect(self, method):
         pass
 
-    def set_owner(self, name: str):
-        """ Sets the owner of this signal. Should be unique throughout the program. A good idea is to use the ID of the
-        parent object.
-        """
-        if self._owner is not None:
-            raise SignalException(f'{self} already has an owner: {self._owner}')
-        if not isinstance(name, str):
-            name = str(name)
-        self._owner = name
-
-    @property
-    def owner(self):
-        return self._owner
-
     @property
     def topic(self):
-        return f"{self._name}-{self._owner}"
+        if self.instace:
+            return f"{self.name}-{id(self.instance)}"
+        if self.owner:
+            return f"{self.name}-{id(self.owner)}"
+        return f"{self.name}-0"
 
     def __str__(self):
-        return f"Signal {self._name} from {self._owner}"
+        return f"Signal {self.name} from {self.owner}"
 
     def __repr__(self):
-        return f"Signal {self._name} from {self._owner}"
+        return f"Signal {self.name} from {self.owner}"
+
+    def __call__(self, *args, **kwargs):
+        print(self.instace)
+

@@ -1,4 +1,5 @@
 import weakref
+from multiprocessing.context import Process
 
 
 class MetaProcess(type):
@@ -21,13 +22,17 @@ class MetaProcess(type):
 
         return proc
 
-    def _get_instances(cls, recursive=False):
+    def get_instances(cls, recursive=False):
         """Get all instances of this class in the registry. If recursive=True
         search subclasses recursively"""
         instances = list(cls._instances)
         if recursive:
             for Child in cls.__subclasses__():
-                instances += Child._get_instances(recursive=recursive)
+                instances += Child.get_instances(recursive=recursive)
 
         # Remove duplicates from multiple inheritance.
         return list(set(instances))
+
+
+class ExperimentorProcess(Process, metaclass=MetaProcess):
+    pass

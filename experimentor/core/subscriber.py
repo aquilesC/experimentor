@@ -7,7 +7,7 @@
     from a queue with ``Queue.get()`` is particularly slow, much slower than serializing a numpy array with
     cPickle.
 """
-from multiprocessing import Process
+from threading import Thread
 from time import sleep
 
 import numpy as np
@@ -19,14 +19,11 @@ from experimentor.core.pusher import Pusher
 from experimentor.lib.log import get_logger
 
 
-class Subscriber(Process, metaclass=MetaProcess):
-    def __init__(self, func, topic, publish_topic=None, args=None, kwargs=None):
+class Subscriber(Thread, metaclass=MetaProcess):
+    def __init__(self, func, topic):
         super(Subscriber, self).__init__()
         self.func = func
         self.topic = topic
-        self.publish_topic = publish_topic
-        self.args = args
-        self.kwargs = kwargs
         self.logger = get_logger()
         self.logger.info(f'Starting subscriber for {func.__name__} on topic {topic}')
 
@@ -34,8 +31,6 @@ class Subscriber(Process, metaclass=MetaProcess):
         context = zmq.Context()
         socket = context.socket(zmq.SUB)
         socket.connect(f"tcp://localhost:{settings.PUBLISHER_PUBLISH_PORT}")
-        if self.publish_topic:
-            listener = Pusher()
         topic_filter = self.topic.encode('utf-8')
         socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
         self.logger.info(f'subscriber for {self.func.__name__} on topic {self.topic} ready')
@@ -55,18 +50,14 @@ class Subscriber(Process, metaclass=MetaProcess):
                 if data == settings.SUBSCRIBER_EXIT_KEYWORD:
                     self.logger.info(f'Stopping Subscriber {self}')
                     break
-            ans = self.func(data)#, *self.args, **self.kwargs)
-            if self.publish_topic:
-                listener.publish(ans, self.publish_topic)
-
+            self.func(data)#, *self.args, **self.kwargs)
         sleep(1)  # Gives enough time for the publishers to finish sending data before closing the socket
         socket.close()
 
     def stop(self):
         with Pusher() as pusher:
-            pusher.publish(settings.SUBSCRIBER_EXIT_KEYWORD)
+            pusher.publish(settings.SUBSCRIBER_EXIT_KEYWORD, self.topic)
         self.join()
-
 
     def __str__(self):
         return f"Subscriber {self.func.__name__}"

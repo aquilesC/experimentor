@@ -15,21 +15,19 @@ other processes listening.
 :license: GPLv3, see LICENSE for more details
 """
 import atexit
-from multiprocessing import Process
 from time import sleep
 
-import numpy as np
 import zmq
 
 from experimentor.config import settings
 from experimentor.core.pusher import Pusher
 from experimentor.lib.log import get_logger
-from .meta import MetaProcess
+from .meta import MetaProcess, ExperimentorProcess
 
 logger = get_logger(name=__name__)
 
 
-class Publisher(Process, metaclass=MetaProcess):
+class Publisher(ExperimentorProcess, metaclass=MetaProcess):
     """ Publisher class in which the queue for publishing messages is defined and also a separated process is started.
     It is important to have a new process, since the serialization/deserialization of messages from the QUEUE may be
     a bottleneck for performance.
