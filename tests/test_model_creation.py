@@ -17,20 +17,13 @@ class TestModelCreation(unittest.TestCase):
 
         self.assertTrue(hasattr(TestModel, '_signals'))
 
-    def test_signals_attribute(self):
-        with self.assertWarns(UserWarning):
-            class TestModel(metaclass=MetaModel):
-                pass
-            TestModel.signals = []
-            tm = TestModel()
-
     def test_signals_model(self):
         class TestModel(metaclass=MetaModel):
             a1 = Signal()
             a2 = Signal()
 
         tm = TestModel()
-        self.assertIs(len(tm.signals), 2)
+        self.assertIs(len(tm._signals), 2)
 
     def test_get_model_instances(self):
         class TestModel(metaclass=MetaModel):
