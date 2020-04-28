@@ -1,11 +1,17 @@
+import time
+from threading import Event
+
 from pypylon import pylon, _genicam
 
 from experimentor import Q_
 from experimentor.lib.log import get_logger
+from experimentor.models.cameras.exceptions import WrongCameraState
+from experimentor.models.decorators import make_async_thread
 from experimentor.models.devices.cameras.base_camera import BaseCamera
 from experimentor.models.devices.cameras.exceptions import CameraNotFound
 
 
+# noinspection SpellCheckingInspection
 class BaslerCamera(BaseCamera):
     def __init__(self, camera):
         super().__init__(camera)
@@ -13,9 +19,14 @@ class BaslerCamera(BaseCamera):
         self.friendly_name = ''
         self.config.link({
             'auto_exposure': ['get_auto_exposure', 'set_auto_exposure'],
-            'auto_gain': ['get_auto_gain', 'set_auto_gain']
+            'auto_gain': ['get_auto_gain', 'set_auto_gain'],
+            'pixel_format': ['get_pixel_format', 'set_pixel_format']
+
         })
         self.mode = self.MODE_SINGLE_SHOT
+        self.free_run_running = False
+        self._stop_free_run = Event()
+        self.fps = 0
 
     def initialize(self):
         """ Initializes the communication with the camera. Get's the maximum and minimum width. It also forces
@@ -112,7 +123,16 @@ class BaslerCamera(BaseCamera):
             raise ValueError(f'Mode must be one of {modes} and not {mode}')
         self._driver.GainAuto.SetValue(mode)
 
-    def set_ROI(self, X, Y):
+    def set_pixel_format(self, mode):
+        self.logger.info(f'Setting pixel format to {format}')
+        self._driver.PixelFormat.SetValue(format)
+
+    def get_pixel_format(self):
+        return self._driver.PixelFormat.GetValue()
+
+    def set_ROI(self, vals):
+        X = vals[0]
+        Y = vals[1]
         width = int(X[1] - X[1] % 4)
         x_pos = int(X[0] - X[0] % 4)
         height = int(Y[1] - Y[1] % 2)
@@ -154,6 +174,77 @@ class BaslerCamera(BaseCamera):
             return f"Camera {self.friendly_name}"
         return super().__str__()
 
+    def trigger_camera(self):
+        if self._driver.IsGrabbing():
+            self.logger.warning('Triggering a grabbing camera')
+        self._driver.StopGrabbing()
+        mode = self.get_acquisition_mode()
+        if mode == self.MODE_CONTINUOUS:
+            self._driver.StartGrabbing(pylon.GrabStrategy_OneByOne)
+            self.logger.info('Grab Strategy: One by One')
+        elif mode == self.MODE_SINGLE_SHOT:
+            self._driver.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
+            self.logger.info('Grab Strategy: Latest Image')
+        elif mode == self.MODE_LAST:
+            self._driver.StartGrabbing(pylon.GrabStrategy_LatestImages)
+        self._driver.ExecuteSoftwareTrigger()
+        self.logger.info('Executed Software Trigger')
+
+    def read_camera(self) -> list:
+        img = []
+        mode = self.get_acquisition_mode()
+        if mode == self.MODE_SINGLE_SHOT or mode == self.MODE_LAST:
+            self.logger.info(f'Grabbing mode: {mode}')
+            grab = self._driver.RetrieveResult(int(self.get_exposure().m_as('ms')) + 100, pylon.TimeoutHandling_Return)
+            if grab and grab.GrabSucceeded():
+                img = [grab.GetArray().T]
+                grab.Release()
+            if mode == self.MODE_SINGLE_SHOT:
+                self._driver.StopGrabbing()
+            return img
+        else:
+            if not self._driver.IsGrabbing():
+                raise WrongCameraState('You need to trigger the camera before reading')
+            num_buffers = self._driver.NumReadyBuffers.Value
+            if num_buffers:
+                img = [None] * num_buffers
+                for i in range(num_buffers):
+                    grab = self._driver.RetrieveResult(int(self.get_exposure().m_as('ms')) + 100, pylon.TimeoutHandling_ThrowException)
+                    if grab and grab.GrabSucceeded():
+                        img[i] = grab.GetArray().T
+                        grab.Release()
+                img = [i for i in img if i is not None]
+        if len(img) >= 1:
+            self.temp_iamge = img[-1]
+        return img
+
+    def start_free_run(self):
+        """ Starts a free run from the camera. It will preserve only the latest image. It depends
+        on how quickly the experiment reads from the camera whether all the images will be available
+        or only some.
+        """
+        if self.free_run_running:
+            self.logger.info(f'Trying to start again the free acquisition of camera {self}')
+            return
+        self.logger.info(f'Starting a free run acquisition of camera {self}')
+        self.free_run_running = True
+        self.logger.debug('First frame of a free_run')
+        self.set_acquisition_mode(self.MODE_CONTINUOUS)
+        self.trigger_camera()  # Triggers the camera only once
+
+    def stop_free_run(self):
+        self._stop_free_run.set()
+
+    def stop_camera(self):
+        self._driver.StopGrabbing()
+
+    def finalize(self):
+        self.stop_free_run()
+        self.stop_camera()
+        self.clean_up_threads()
+        super().finalize()
+
+
 if __name__ == '__main__':
     cam = BaslerCamera('da')
     cam.initialize()
@@ -165,3 +256,8 @@ if __name__ == '__main__':
     # cam.clear_ROI()
     # cam.config.fetch_all()
     # print(cam.config)
+    cam.start_free_run()
+    time.sleep(1)
+    for i in range(10):
+        img = cam.read_camera()
+        print(img)

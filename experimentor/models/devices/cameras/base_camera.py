@@ -195,7 +195,7 @@ class BaseCamera(ModelDevice):
         pass
 
     @not_implemented
-    def set_ROI(self, X, Y):
+    def set_ROI(self, vals):
         """ Sets up the ROI. Not all cameras are 0-indexed, so this is an important
         place to define the proper ROI.
 

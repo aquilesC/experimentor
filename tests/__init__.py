@@ -1,2 +1,2 @@
-from .test_model import TestDeviceModel
+from .test_device_model import TestDeviceModel
 from .test_model_creation import TestModelCreation

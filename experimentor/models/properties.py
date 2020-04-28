@@ -31,6 +31,7 @@ from typing import List
 from experimentor.lib.log import get_logger
 from experimentor.lib.recursive_attributes import rgetattr
 from experimentor.models.exceptions import LinkException, PropertyException
+from experimentor.models.models import BaseModel
 
 
 class Properties:
@@ -38,7 +39,7 @@ class Properties:
     needs to be updated. It also allows to keep track of what method should be triggered for each update.
     """
 
-    def __init__(self, parent: object, **kwargs):
+    def __init__(self, parent: BaseModel, **kwargs):
         self._parent = parent
         self._properties = dict()
         self._links = dict()
@@ -114,10 +115,9 @@ class Properties:
     def fetch(self, prop: str):
         """ Fetches the desired property from the device, provided that a link is available. """
         if prop in self._links:
-            getter_name = self._links[prop][0]
-            getter = rgetattr(self._parent, getter_name)
+            getter = self._links[prop][0]
             if callable(getter):
-                value = getter()
+                value = getter(self._parent)
             else:
                 value = getter
             self.logger.debug(f'Fetched {prop} -> {value}')
@@ -152,11 +152,10 @@ class Properties:
             if property in self._properties:
                 value = self.get_property(property)
                 if value['to_update'] or force:
-                    setter_name = self._links[property][1]
-                    if setter_name:
+                    setter = self._links[property][1]
+                    if setter is not None:
                         new_value = value['new_value'] or value['value']
-                        setter = rgetattr(self._parent, setter_name)
-                        value = setter(*new_value)
+                        value = setter(self._parent, new_value)
                         if value is None:
                             value = self.fetch(property)
                         self.upgrade({property: value})
@@ -194,7 +193,7 @@ class Properties:
         """Link properties to methods for update and retrieve them.
 
         :param linking: Dictionary in where information is stored as parameter=>[getter, setter], for example:
-            linking = {'exposure_time': ['get_exposure', 'set_exposure']}
+            linking = {'exposure_time': [self.get_exposure, self.set_exposure]}
             In this case, ``exposure_time`` is the property stored, while ``get_exposure`` is the method that will be
             called for getting the latest value, and set_exposure will be called to set the value. In case set_exposure
             returns something different from None, no extra call to get_exposure will be made.
@@ -223,6 +222,18 @@ class Properties:
                 self._links[link] = None
             else:
                 warnings.warn('Unlinking a property which was not previously linked.')
+
+    def autolink(self):
+        """ Links the properties defined as :class:`~ModelProp` in the models using their setters and getters. """
+        for prop_name, prop in self._parent._model_props.items():
+            if prop.fset:
+                self.link({
+                    prop_name: [prop.fget, prop.fset]
+                })
+            else:
+                self.link({
+                    prop_name: prop.fget
+                })
 
     @classmethod
     def from_dict(cls, parent, data: dict):

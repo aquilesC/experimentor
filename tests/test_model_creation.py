@@ -1,7 +1,9 @@
 import unittest
+from time import sleep
 
 from experimentor.core.exceptions import ModelDefinitionException
 from experimentor.core.signal import Signal
+from experimentor.models.devices.base_device import ModelDevice
 from experimentor.models.models import MetaModel, BaseModel
 
 
@@ -51,10 +53,3 @@ class TestModelCreation(unittest.TestCase):
         self.assertIs(len(TestModel.get_models(recursive=True)), 2)
         self.assertIs(len(TestModel.get_instances(recursive=True)), 2)
 
-    def test_model_proxy(self):
-        class TestModel(BaseModel):
-            pass
-
-        tm = TestModel.as_process()
-
-        self.assertTrue(hasattr(tm, 'child_process'))

@@ -12,10 +12,16 @@ from abc import abstractmethod
 from experimentor.models.meta import MetaModel
 
 
+class ExpDict(dict):
+    pass
+
+
 class BaseModel(metaclass=MetaModel):
     """All models should inherit from this base model. It defines some basic methods and checks that prevent errors
     later at runtime.
     """
+    _model_props = ExpDict()
+
     def __init__(self):
         atexit.register(self.finalize)
         self._threads = []
@@ -53,7 +59,7 @@ class ProxyObject:
         self.child_process.start()
         print(self.parent_pipe.recv())
 
-        atexit.register(lambda: self.parent_pipe.send(None))
+        # atexit.register(lambda: self.parent_pipe.send(None))
 
 
 def _create_process_loop(cls, command_pipe, *args, **kwargs):
@@ -72,10 +78,10 @@ def _create_process_loop(cls, command_pipe, *args, **kwargs):
         try:
             cmd = command_pipe.recv()
         except EOFError:  # This implies the parent is dead; exit.
-            return None
+            break
         if cmd is None: # This is how the parent signals us to exit.
             print('Exiting')
-            return None
+            break
         attr_name, args, kwargs = cmd
         result = getattr(obj, attr_name)(*args, **kwargs)
         if callable(result):
