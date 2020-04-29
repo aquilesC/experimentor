@@ -4,7 +4,6 @@
     object, so it is possible to update values either by submitting a value directly to the ModelProp or by sending
     a dictionary to the properties and updating all at once.
 """
-from experimentor.models.properties import Properties
 
 
 class ModelProp:

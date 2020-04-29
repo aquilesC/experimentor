@@ -32,6 +32,7 @@ from experimentor import Q_
 from experimentor.lib.log import get_logger
 from experimentor.models.decorators import not_implemented
 from experimentor.models.devices.base_device import ModelDevice
+from experimentor.models.model_properties import ModelProp
 
 
 class BaseCamera(ModelDevice):
@@ -71,6 +72,8 @@ class BaseCamera(ModelDevice):
         MODE_LAST: 'Keep Last',
     }
 
+    camera = 'Base Camera Model'
+
     def __init__(self, camera):
         super().__init__()
         self.logger = get_logger(__name__)
@@ -79,16 +82,6 @@ class BaseCamera(ModelDevice):
         self.running = False
         self.data_type = np.uint16
         self.temp_image = None
-
-        self.config.link({
-            'exposure': ['get_exposure', 'set_exposure'],
-            'gain': ['get_gain', 'set_gain'],
-            'roi': ['get_ROI', 'set_ROI'],
-            'binning': ['get_binning', 'get_binning'],
-            'acquisition_mode': ['get_acquisition_mode', 'set_acquisition_mode'],
-            'max_width': 'get_ccd_width',
-            'max_height': 'get_ccd_height',
-        })
 
     def configure(self, properties: dict):
         self.logger.info('Updating config')
@@ -159,16 +152,16 @@ class BaseCamera(ModelDevice):
         """ Triggers the camera. """
         pass
 
+    @ModelProp()
     @not_implemented
-    def set_acquisition_mode(self, mode):
+    def acquisition_mode(self):
         """ Set the readout mode of the camera: Single or continuous.
         :param int mode: One of self.MODE_CONTINUOUS, self.MODE_SINGLE_SHOT
         """
         pass
 
-    @not_implemented
-    def get_acquisition_mode(self):
-        """ Returns the acquisition mode, either continuous or single shot. """
+    @acquisition_mode.setter
+    def acquisition_mode(self, value):
         pass
 
     @not_implemented
@@ -178,13 +171,14 @@ class BaseCamera(ModelDevice):
         """
         pass
 
+    @ModelProp()
     @not_implemented
-    def set_exposure(self, exposure):
+    def exposure(self):
         """ Sets the exposure of the camera. """
         pass
 
-    @not_implemented
-    def get_exposure(self):
+    @exposure.setter
+    def exposure(self, value):
         """ Gets the exposure time of the camera. """
         pass
 
@@ -194,41 +188,44 @@ class BaseCamera(ModelDevice):
         """
         pass
 
+    @ModelProp
     @not_implemented
-    def set_ROI(self, vals):
-        """ Sets up the ROI. Not all cameras are 0-indexed, so this is an important
-        place to define the proper ROI.
+    def ROI(self):
+        """ Sets up the ROI. Not all cameras are 0-indexed, so this is an important place to define the proper ROI.
 
-        :param list or tuple X: array type with the coordinates for the ROI X[0], X[1]
-        :param list or tuple Y: array type with the coordinates for the ROI Y[0], Y[1]
-        :return: X, Y lists with the current ROI information
+        Values
+        ------
+        vals : list or tuple
+            Organized as (X, Y), where the coordinates for the ROI would be X[0], X[1], Y[0], Y[1]
         """
         pass
 
-    @not_implemented
-    def get_ROI(self):
-        """ Gets the current region of interest. """
+    @ROI.setter
+    def ROI(self, vals):
         pass
 
     def clear_ROI(self):
         """ Clears the ROI by setting it to the maximum available area.
         """
-        self.set_ROI((0, self.config['max_width']-1), (0, self.config['max_height']-1))
+        self.ROI = ((0, self.config['max_width']-1), (0, self.config['max_height']-1))
 
+    @ModelProp()
     @not_implemented
-    def get_serial_number(self):
+    def serial_number(self):
         """ Returns the serial number of the camera, or a way of identifying the camera in an experiment.
         """
         pass
 
+    @ModelProp()
     @not_implemented
-    def get_ccd_width(self):
+    def ccd_width(self):
         """ Returns the CCD width in pixels this is equivalent to the :attr:`max_width`
         """
         pass
 
+    @ModelProp()
     @not_implemented
-    def get_ccd_height(self):
+    def ccd_height(self):
         """ Returns the CCD height in pixels this is equivalent to the :attr:`max_height`
         """
         pass
@@ -238,30 +235,36 @@ class BaseCamera(ModelDevice):
         """Stops the acquisition without closing the connection to the camera."""
         pass
 
+    @ModelProp()
     @not_implemented
-    def set_gain(self, gain: float) -> float:
+    def gain(self):
         """Sets the gain on the camera, if possible
 
-        :param gain: a float representing the gain
+        Values
+        ------
+        gain : float
+            The gain, depending on the camera it can be an integer, it can be specified in dB, etc.
         """
         pass
 
+    @gain.setter
+    def gain(self, value):
+        pass
+
+    @ModelProp()
     @not_implemented
-    def get_gain(self) -> float:
-        """ Gets the current gain of the camera
+    def binning(self):
+        """ The binning of the camera if supported. Has to check if binning in X/Y can be different or not, etc.
+
+        Values
+        ------
+        The binning is specified as a list or tuple like: [X, Y], with the information of the binning in the X or Y
+        direction.
         """
         pass
 
-    @not_implemented
-    def set_binning(self, xbin, ybin):
-        """ Sets the binning of the camera if supported. Has to check if binning in X/Y can be different or not, etc.
-        """
-        pass
-
-    @not_implemented
-    def get_binning(self):
-        """ Gets the current binning of the camera, if possible to have a binning
-        """
+    @binning.setter
+    def binning(self, values):
         pass
 
     @not_implemented

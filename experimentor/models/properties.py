@@ -29,7 +29,6 @@ import warnings
 from typing import List
 
 from experimentor.lib.log import get_logger
-from experimentor.lib.recursive_attributes import rgetattr
 from experimentor.models.exceptions import LinkException, PropertyException
 from experimentor.models.models import BaseModel
 
@@ -117,9 +116,9 @@ class Properties:
         if prop in self._links:
             getter = self._links[prop][0]
             if callable(getter):
-                value = getter(self._parent)
+                value = getter()
             else:
-                value = getter
+                value = getattr(self._parent, getter)
             self.logger.debug(f'Fetched {prop} -> {value}')
             return value
         else:
@@ -150,12 +149,17 @@ class Properties:
         """
         if property in self._links:
             if property in self._properties:
-                value = self.get_property(property)
-                if value['to_update'] or force:
+                property_value = self.get_property(property)
+                if property_value['to_update'] or force:
                     setter = self._links[property][1]
                     if setter is not None:
-                        new_value = value['new_value'] or value['value']
-                        value = setter(self._parent, new_value)
+                        property_value['old_value'] = property_value['value']
+                        new_value = property_value['new_value'] or property_value['value']
+                        if callable(setter):
+                            value = setter(new_value)
+                        else:
+                            self._parent.__setattr__(setter, new_value)
+                            value = None
                         if value is None:
                             value = self.fetch(property)
                         self.upgrade({property: value})
@@ -202,14 +206,17 @@ class Properties:
             if key in self._links and self._links[key] is not None:
                 raise LinkException(f'That property is already linked to {self._links[key]}. Please, unlink first')
             if not isinstance(value, list):
-                self._links[key] = [value, None]
+                value = [value, None]
             else:
                 if len(value) == 1:
-                    self._links[key] = value.append(None)
-                elif len(value) == 2:
-                    self._links[key] = value
-                else:
+                    value.append(None)
+                elif len(value) > 2:
                     raise PropertyException(f'Properties only accept setters and getter, trying to link {key} with {len(value)} methods')
+            getter = getattr(self._parent, value[0])
+            getter = getter if callable(getter) else value[0]
+            setter = getattr(self._parent, value[1]) if value[1] else None
+            setter = setter if callable(setter) else value[1]
+            self._links[key] = [getter, setter]
 
     def unlink(self, unlink_list: List[str]) -> None:
         """ Unlinks the properties and the methods. This is just to prevent overwriting linkings under the hood and
@@ -228,11 +235,11 @@ class Properties:
         for prop_name, prop in self._parent._model_props.items():
             if prop.fset:
                 self.link({
-                    prop_name: [prop.fget, prop.fset]
+                    prop_name: [prop.fget.__name__, prop.fset.__name__]
                 })
             else:
                 self.link({
-                    prop_name: prop.fget
+                    prop_name: prop.fget.__name__
                 })
 
     @classmethod

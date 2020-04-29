@@ -6,24 +6,18 @@ from pypylon import pylon, _genicam
 from experimentor import Q_
 from experimentor.lib.log import get_logger
 from experimentor.models.cameras.exceptions import WrongCameraState
-from experimentor.models.decorators import make_async_thread
 from experimentor.models.devices.cameras.base_camera import BaseCamera
 from experimentor.models.devices.cameras.exceptions import CameraNotFound
-
-
 # noinspection SpellCheckingInspection
+from experimentor.models.model_properties import ModelProp
+
+
 class BaslerCamera(BaseCamera):
     def __init__(self, camera):
         super().__init__(camera)
         self.logger = get_logger(__name__)
         self.friendly_name = ''
-        self.config.link({
-            'auto_exposure': ['get_auto_exposure', 'set_auto_exposure'],
-            'auto_gain': ['get_auto_gain', 'set_auto_gain'],
-            'pixel_format': ['get_pixel_format', 'set_pixel_format']
-
-        })
-        self.mode = self.MODE_SINGLE_SHOT
+        self._acquisition_mode = self.MODE_SINGLE_SHOT
         self.free_run_running = False
         self._stop_free_run = Event()
         self.fps = 0
@@ -61,7 +55,9 @@ class BaslerCamera(BaseCamera):
 
         self.config.fetch_all()
 
-    def get_exposure(self) -> Q_:
+    @ModelProp()
+    def exposure(self) -> Q_:
+        """ The exposure of the camera, defined in units of time """
         try:
             exposure = float(self._driver.ExposureTime.ToString()) * Q_('us')
             return exposure
@@ -69,68 +65,93 @@ class BaslerCamera(BaseCamera):
             self.logger.error('Timeout getting the exposure')
             return self.config['exposure']
 
-    def set_exposure(self, exposure: Q_):
-        self.logger.info('Setting exposure to {:~}'.format(exposure))
+    @exposure.setter
+    def exposure(self, exposure: Q_):
+        self.logger.info(f'Setting exposure to {exposure}')
         try:
             self._driver.ExposureTime.SetValue(exposure.m_as('us'))
         except _genicam.TimeoutException:
             self.logger.error(f'Timed out setting the exposure to {exposure}')
 
-    def set_gain(self, gain: float):
-        self.logger.info(f'Setting gain to {gain}')
-        try:
-            self._driver.Gain.SetValue(gain)
-        except _genicam.TimeoutException:
-            self.logger.error('Problem setting the gain')
-
-    def get_gain(self) -> float:
+    @ModelProp()
+    def gain(self):
+        """ Gain is a float """
         try:
             return float(self._driver.Gain.Value)
         except _genicam.TimeoutException:
             self.logger.error('Timeout while reading the gain from the camera')
             return self.config['gain']
 
-    def get_acquisition_mode(self):
-        return self.mode
+    @gain.setter
+    def gain(self, gain: float):
+        self.logger.info(f'Setting gain to {gain}')
+        try:
+            self._driver.Gain.SetValue(gain)
+        except _genicam.TimeoutException:
+            self.logger.error('Problem setting the gain')
 
-    def set_acquisition_mode(self, mode):
+    @ModelProp()
+    def acquisition_mode(self):
+        return self._acquisition_mode
+
+    @acquisition_mode.setter
+    def acquisition_mode(self, mode):
         if self._driver.IsGrabbing():
             self.logger.warning(f'{self} Changing acquisition mode for a grabbing camera')
 
-        self.logger.info(f'{self.friendly_name} Setting acquisition mode to {mode}')
+        self.logger.info(f'{self} Setting acquisition mode to {mode}')
+
         if mode == self.MODE_CONTINUOUS:
             self.logger.debug(f'Setting buffer to {self._driver.MaxNumBuffer.Value}')
-            self.mode = mode
+            self._acquisition_mode = mode
         elif mode == self.MODE_SINGLE_SHOT:
             self.logger.debug(f'Setting buffer to 1')
-            self.mode = mode
+            self._acquisition_mode = mode
 
-    def get_auto_exposure(self) -> str:
+    @ModelProp()
+    def auto_exposure(self):
+        """ Auto exposure can take one of three values: Off, Once, Continuous """
         return self._driver.ExposureAuto.Value
 
-    def set_auto_exposure(self, mode: str):
+    @auto_exposure.setter
+    def auto_exposure(self, mode: str):
         modes = ('Off', 'Once', 'Continuous')
         if mode not in modes:
             raise ValueError(f'Mode must be one of {modes} and not {mode}')
         self._driver.ExposureAuto.SetValue(mode)
 
-    def get_auto_gain(self) -> str:
+    @ModelProp()
+    def auto_gain(self):
+        """ Auto Gain must be one of three values: Off, Once, Continuous"""
         return self._driver.GainAuto.Value
 
-    def set_auto_gain(self, mode):
+    @auto_gain.setter
+    def auto_gain(self, mode):
         modes = ('Off', 'Once', 'Continuous')
         if mode not in modes:
             raise ValueError(f'Mode must be one of {modes} and not {mode}')
         self._driver.GainAuto.SetValue(mode)
 
-    def set_pixel_format(self, mode):
-        self.logger.info(f'Setting pixel format to {format}')
-        self._driver.PixelFormat.SetValue(format)
-
-    def get_pixel_format(self):
+    @ModelProp()
+    def pixel_format(self):
+        """ Pixel format must be one of Mono8, Mono12, Mono12p"""
         return self._driver.PixelFormat.GetValue()
 
-    def set_ROI(self, vals):
+    @pixel_format.setter
+    def pixel_format(self, mode):
+        self.logger.info(f'Setting pixel format to {mode}')
+        self._driver.PixelFormat.SetValue(mode)
+
+    @ModelProp()
+    def ROI(self):
+        offset_X = self._driver.OffsetX.Value
+        offset_Y = self._driver.OffsetY.Value
+        width = self._driver.Width.Value - 1
+        height = self._driver.Height.Value - 1
+        return ((offset_X, offset_X+width),(offset_Y, offset_Y+height))
+
+    @ROI.setter
+    def ROI(self, vals):
         X = vals[0]
         Y = vals[1]
         width = int(X[1] - X[1] % 4)
@@ -154,19 +175,13 @@ class BaslerCamera(BaseCamera):
         self.Y = (y_pos, y_pos + width)
         self.width = self._driver.Width.Value
         self.height = self._driver.Height.Value
-        return (x_pos, x_pos+width), (y_pos, y_pos+height)
 
-    def get_ROI(self):
-        offset_X = self._driver.OffsetX.Value
-        offset_Y = self._driver.OffsetY.Value
-        width = self._driver.Width.Value - 1
-        height = self._driver.Height.Value - 1
-        return ((offset_X, offset_X+width),(offset_Y, offset_Y+height))
-
-    def get_ccd_height(self):
+    @ModelProp()
+    def ccd_height(self):
         return self._driver.Height.Max
 
-    def get_ccd_width(self):
+    @ModelProp()
+    def ccd_width(self):
         return self._driver.Width.Max
 
     def __str__(self):
@@ -178,7 +193,7 @@ class BaslerCamera(BaseCamera):
         if self._driver.IsGrabbing():
             self.logger.warning('Triggering a grabbing camera')
         self._driver.StopGrabbing()
-        mode = self.get_acquisition_mode()
+        mode = self.acquisition_mode
         if mode == self.MODE_CONTINUOUS:
             self._driver.StartGrabbing(pylon.GrabStrategy_OneByOne)
             self.logger.info('Grab Strategy: One by One')
@@ -192,7 +207,7 @@ class BaslerCamera(BaseCamera):
 
     def read_camera(self) -> list:
         img = []
-        mode = self.get_acquisition_mode()
+        mode = self.acquisition_mode()
         if mode == self.MODE_SINGLE_SHOT or mode == self.MODE_LAST:
             self.logger.info(f'Grabbing mode: {mode}')
             grab = self._driver.RetrieveResult(int(self.get_exposure().m_as('ms')) + 100, pylon.TimeoutHandling_Return)
@@ -209,7 +224,7 @@ class BaslerCamera(BaseCamera):
             if num_buffers:
                 img = [None] * num_buffers
                 for i in range(num_buffers):
-                    grab = self._driver.RetrieveResult(int(self.get_exposure().m_as('ms')) + 100, pylon.TimeoutHandling_ThrowException)
+                    grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_ThrowException)
                     if grab and grab.GrabSucceeded():
                         img[i] = grab.GetArray().T
                         grab.Release()
@@ -229,7 +244,7 @@ class BaslerCamera(BaseCamera):
         self.logger.info(f'Starting a free run acquisition of camera {self}')
         self.free_run_running = True
         self.logger.debug('First frame of a free_run')
-        self.set_acquisition_mode(self.MODE_CONTINUOUS)
+        self.acquisition_mode = self.MODE_CONTINUOUS
         self.trigger_camera()  # Triggers the camera only once
 
     def stop_free_run(self):

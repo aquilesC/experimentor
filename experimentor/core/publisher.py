@@ -84,7 +84,7 @@ class Publisher(ExperimentorProcess, metaclass=MetaProcess):
             i += 1
             logger.debug(data)
 
-            if topic is "":
+            if topic == "":
                 logger.info('Got Broad Topic')
                 if isinstance(data, str) and data == settings.PUBLISHER_EXIT_KEYWORD:
                     logger.debug('Stopping the Publisiher')

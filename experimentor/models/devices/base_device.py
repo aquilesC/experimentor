@@ -11,6 +11,7 @@ class ModelDevice(BaseModel, metaclass=MetaDevice):
     def __init__(self):
         super().__init__()
         self.config = Properties(self)
+        self.config.autolink()
 
     def __str__(self):
         return f"Model {id(self)}"
