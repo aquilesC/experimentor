@@ -68,7 +68,11 @@ class Properties:
         if isinstance(item, int):
             key = list(self._properties.keys())[item]
             return {key: self._properties[key]['value']}
-        return self._properties[item]['value']
+        if item in self._properties:
+            return self._properties[item]['value']
+        if item in self._parent._model_props:
+            return None
+        raise KeyError(f'Property {item} unknown')
 
     def all(self) -> dict:
         """ Returns a dictionary with all the known values. """
@@ -122,6 +126,10 @@ class Properties:
             self.logger.debug(f'Fetched {prop} -> {value}')
             return value
         else:
+            # It may be a Model Property that has not been linked yet
+            if prop in self._parent._model_props:
+                self._links.update({prop: [prop, prop]})
+                return self.fetch(prop)
             self.logger.error(f'{prop} is not a valid property')
             raise KeyError(f'{prop} is not a valid property')
 
@@ -130,7 +138,8 @@ class Properties:
         not alter the to_update flag, new_value, nor old_value.
         """
         self.logger.info(f'Fetching all properties of {self._parent}')
-        for key in self._links:
+        keys = {key for key in self._links} | {key for key in self._parent._model_props}
+        for key in keys:
             value = self.fetch(key)
             self.upgrade({key: value}, force=True)
 
@@ -170,7 +179,12 @@ class Properties:
             else:
                 raise PropertyException('Trying to update a property which is not registered')
         else:
-            raise LinkException(f'Trying to update {property}, but it is not linked to any setter method')
+            # The property may have been defined as a Model Property, we can add it to the links
+            if property in self._parent._model_props:
+                self._links.update({property: [property, property]})
+                self.apply(property)
+            else:
+                raise LinkException(f'Trying to update {property}, but it is not linked to any setter method')
 
     def apply_all(self):
         """ Applies all changes marked as 'to_update', using the links to methods generated with :meth:~link

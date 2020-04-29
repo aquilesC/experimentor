@@ -27,7 +27,7 @@ class TestModelCreation(unittest.TestCase):
     def test_config_values(self):
         tm = self.test_class()
         with self.assertRaises(KeyError):
-            p = tm.config['param1']  # param1 is not defined until we try to fetch or set its value
+            p = tm.config['param2']  # param1 is not defined until we try to fetch or set its value
 
         tm.config.fetch_all()
         self.assertEqual(tm.config['param1'], None)

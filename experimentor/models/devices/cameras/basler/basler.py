@@ -13,11 +13,12 @@ from experimentor.models.model_properties import ModelProp
 
 
 class BaslerCamera(BaseCamera):
+    _acquisition_mode = BaseCamera.MODE_SINGLE_SHOT
+
     def __init__(self, camera):
         super().__init__(camera)
         self.logger = get_logger(__name__)
         self.friendly_name = ''
-        self._acquisition_mode = self.MODE_SINGLE_SHOT
         self.free_run_running = False
         self._stop_free_run = Event()
         self.fps = 0
@@ -161,8 +162,8 @@ class BaslerCamera(BaseCamera):
         self.logger.info(f'Updating ROI: (x, y, width, height) = ({x_pos}, {y_pos}, {width}, {height})')
         self._driver.OffsetX.SetValue(0)
         self._driver.OffsetY.SetValue(0)
-        self._driver.Width.SetValue(self.config['max_width'])
-        self._driver.Height.SetValue(self.config['max_height'])
+        self._driver.Width.SetValue(self.ccd_height)
+        self._driver.Height.SetValue(self.ccd_height)
         self.logger.debug(f'Setting width to {width}')
         self._driver.Width.SetValue(width)
         self.logger.debug(f'Setting Height to {height}')
@@ -207,12 +208,13 @@ class BaslerCamera(BaseCamera):
 
     def read_camera(self) -> list:
         img = []
-        mode = self.acquisition_mode()
+        mode = self.acquisition_mode
         if mode == self.MODE_SINGLE_SHOT or mode == self.MODE_LAST:
             self.logger.info(f'Grabbing mode: {mode}')
-            grab = self._driver.RetrieveResult(int(self.get_exposure().m_as('ms')) + 100, pylon.TimeoutHandling_Return)
+            grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_Return)
             if grab and grab.GrabSucceeded():
                 img = [grab.GetArray().T]
+                self.temp_image = img[0]
                 grab.Release()
             if mode == self.MODE_SINGLE_SHOT:
                 self._driver.StopGrabbing()
@@ -230,7 +232,7 @@ class BaslerCamera(BaseCamera):
                         grab.Release()
                 img = [i for i in img if i is not None]
         if len(img) >= 1:
-            self.temp_iamge = img[-1]
+            self.temp_image = img[-1]
         return img
 
     def start_free_run(self):
