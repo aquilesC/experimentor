@@ -18,12 +18,12 @@ import numpy as np
 import zmq
 
 from experimentor.config import settings
-from experimentor.core.meta import MetaProcess
+from experimentor.core.meta import ExperimentorProcess
 from experimentor.core.pusher import Pusher
 from experimentor.lib.log import get_logger
 
 
-class Subscriber(Process, metaclass=MetaProcess):
+class Subscriber(ExperimentorProcess):
     def __init__(self, func, topic, publish_topic=None, args=None, kwargs=None):
         super(Subscriber, self).__init__()
         self.func = func
