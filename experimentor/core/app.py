@@ -34,12 +34,18 @@ class ExperimentApp:
             self.publisher = Publisher(settings.GENERAL_STOP_EVENT)
             self.publisher.start()
 
+        self.gui_thread = False
         if gui:
             self.gui_thread = Thread(target=start_gui, args=(self.experiment_model, ))
             self.gui_thread.start()
 
     @property
     def is_running(self):
+        if self.gui_thread :
+            if self.gui_thread.is_alive():
+                return True
+            else:
+                return False
         if self.experiment_model.is_alive:
             return True
 
@@ -66,7 +72,7 @@ class ExperimentApp:
         processes = ExperimentorProcess.get_instances(recursive=True)
         processes = [proc for proc in processes if proc.is_alive()]
         if len(processes):
-            self.log.error('There are stil {len(processes)} alive. They should have been stopped by now')
+            self.log.error('There are still {len(processes)} alive. They should have been stopped by now')
 
         self.log.info('Bye Bye!')
 
@@ -83,4 +89,3 @@ def start_gui(experiment_model):
     gui_start_window = window_class(experiment_model)
     gui_start_window.show()
     gui_app.exec()
-    experiment_model.finalize()
