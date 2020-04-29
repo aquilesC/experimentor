@@ -28,6 +28,7 @@ from typing import Union
 
 import yaml
 
+from experimentor.core.meta import ExperimentorProcess
 from experimentor.core.signal import Signal
 from experimentor.core.subscriber import Subscriber
 from experimentor.lib.log import get_logger
@@ -174,7 +175,7 @@ class Experiment(BaseExperiment):
         self._connections.append({
             'method': method.__name__,
             'topic': topic,
-            'process': Process(target=Subscriber, args=arguments, kwargs=kwargs),
+            'process': ExperimentorProcess(target=Subscriber, args=arguments, kwargs=kwargs),
             'event': event,
         })
         self._connections[-1]['process'].start()
