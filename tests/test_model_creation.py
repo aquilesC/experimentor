@@ -3,6 +3,7 @@ from time import sleep
 
 from experimentor.core.exceptions import ModelDefinitionException
 from experimentor.core.signal import Signal
+from experimentor.models.decorators import make_async_thread
 from experimentor.models.devices.base_device import ModelDevice
 from experimentor.models.models import MetaModel, BaseModel
 
@@ -53,3 +54,25 @@ class TestModelCreation(unittest.TestCase):
         self.assertIs(len(TestModel.get_models(recursive=True)), 2)
         self.assertIs(len(TestModel.get_instances(recursive=True)), 2)
 
+    def test_clean_thread(self):
+        class TestModel(BaseModel):
+            @make_async_thread
+            def simple_func(self):
+                return True
+
+        tm = TestModel()
+        tm.simple_func()
+        self.assertEqual(len(tm._threads), 1)
+        tm.clean_up_threads()
+        self.assertEqual(len(tm._threads), 0)
+
+    def test_proxy_object(self):
+        class TestModel(BaseModel):
+            def initialize(self):
+                pass
+
+        tm = TestModel.as_process()
+        self.assertTrue(tm.child_process.is_alive())
+        tm.parent_pipe.send(None)
+        sleep(.1)
+        self.assertFalse(tm.child_process.is_alive())

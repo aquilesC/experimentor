@@ -8,7 +8,9 @@ from experimentor.models.devices.cameras.base_camera import BaseCamera
 class TestDeviceModel(unittest.TestCase):
     def test_model_camera_not_implemented(self):
         class Camera(BaseCamera):
-            pass
+            def __init__(self, camera):
+                super().__init__(camera)
+
         cam = Camera('cam')
         log = get_logger()
         with self.assertLogs(logger=log, level=logging.WARNING):

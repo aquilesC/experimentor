@@ -11,6 +11,7 @@ class TestExperimentModel(unittest.TestCase):
         exp = Exp()
         self.assertTrue(hasattr(exp, 'config'))
         exp.stop_subscribers()
+        exp.finalize()
 
     def test_make_folder(self):
         folder, filename = Experiment.make_filename('.', '{i}.dat')
