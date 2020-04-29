@@ -4,9 +4,9 @@
 
 **A flexible package for experiment control and automation**
 
-Experimentor is a Python package aimed at simplifying the task of controlling experiments in various fields. The starting point of the development was a nano photonics setup and therefore the examples and the bulk of the code makes references to optical microscopes, but by no means this project is limited to them.
+Experimentor is a framework that simplifies the task of building instrumentation software in Python. It follows the MVC pattern to the letter. Controllers are drivers, Models implement the logic of the instruments and the experiments themselves, while the View specifies the user interface. 
 
 Installing
 ----------
 
-The code of this program is the repository that can be found at ``https://github.com/uetke/experimentor``. You may also check the website ``https://uetke.com`` for some updates and comments that may not enter into this documentation.
+The code of this program is the repository that can be found at ``https://github.com/aquilesC/experimentor``. You may also check the website [Python for the Lab](https://www.pythonforthelab.com) for some updates and comments that may not enter into this documentation.
