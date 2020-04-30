@@ -59,6 +59,8 @@ class BaslerCamera(BaseCamera):
     @ModelProp()
     def exposure(self) -> Q_:
         """ The exposure of the camera, defined in units of time """
+        if self.config['exposure'] is not None:
+            return self.config['exposure']
         try:
             exposure = float(self._driver.ExposureTime.ToString()) * Q_('us')
             return exposure
@@ -71,6 +73,8 @@ class BaslerCamera(BaseCamera):
         self.logger.info(f'Setting exposure to {exposure}')
         try:
             self._driver.ExposureTime.SetValue(exposure.m_as('us'))
+            exposure = float(self._driver.ExposureTime.ToString()) * Q_('us')
+            self.config.upgrade({'exposure': exposure})
         except _genicam.TimeoutException:
             self.logger.error(f'Timed out setting the exposure to {exposure}')
 
