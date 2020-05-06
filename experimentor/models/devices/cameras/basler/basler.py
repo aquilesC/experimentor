@@ -72,6 +72,8 @@ class BaslerCamera(BaseCamera):
     def exposure(self, exposure: Q_):
         self.logger.info(f'Setting exposure to {exposure}')
         try:
+            if not isinstance(exposure, Q_):
+                exposure = Q_(exposure)
             self._driver.ExposureTime.SetValue(exposure.m_as('us'))
             exposure = float(self._driver.ExposureTime.ToString()) * Q_('us')
             self.config.upgrade({'exposure': exposure})
