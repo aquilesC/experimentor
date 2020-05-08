@@ -1,12 +1,25 @@
 """
-    In order to simplify the update of values in models, we can define ModelProps. They can be used as decorators in
-    pretty much the same way @propery can be used. The only difference is that they register in the models properties
-    object, so it is possible to update values either by submitting a value directly to the ModelProp or by sending
-    a dictionary to the properties and updating all at once.
+    Features
+    ========
+    Features in a model are those parameters that can be read, set, or both. They were modeled after Lantz Feat objects,
+    and the idea is that they can encapsulate common patterns in device control. They are similar to :mod:`~Settings` in
+    behavior, except for the absence of a cache. Features do communicate with the device when reading a value.
+
+    For example, a feature could be the value of an analog input on a DAQ, or the temperature of a camera. They are
+    meant to be part of a measurement, for example their values can change in loops in order to make a scan. Features can
+    be used as decorators in pretty much the same way @propery can be used. The only difference is that they register in
+    the models properties object, so it is possible to update values either by submitting a value directly to the Featire
+    or by sending a dictionary to the properties and updating all at once.
+
+    .. TODO:: It is possible to define complex behavior such as unit conversion, limit checking, etc. We should narrow
+        down what is appropriate for a model and what should go into the Controller.
+
+    .. TODO:: A useful pattern is to catch the exception raised by the controllers if a value is out of range, or with
+        the wrong units.
 """
 
 
-class ModelProp:
+class Feature:
     """Properties that belong to models. It makes easier the setting and getting of attributes, while at the same
     time it keeps track of the properties of each model.
     """

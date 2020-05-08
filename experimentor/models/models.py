@@ -19,8 +19,17 @@ class ExpDict(dict):
 class BaseModel(metaclass=MetaModel):
     """All models should inherit from this base model. It defines some basic methods and checks that prevent errors
     later at runtime.
+
+    Attributes
+    ----------
+    _model_props : ExpDict
+        Dictionary-like object to store the properties of the model
+    _settings : ExpDict
+        Dictionary-like object where the settings are stored. This dictionary is also used to retrieve the latest known
+        value of the setting.
     """
     _model_props = ExpDict()
+    _settings = ExpDict()
 
     def __init__(self):
         atexit.register(self.finalize)

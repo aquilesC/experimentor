@@ -1,7 +1,7 @@
 import unittest
 
 from experimentor.models.devices.base_device import ModelDevice
-from experimentor.models.model_properties import ModelProp
+from experimentor.models.features import Feature
 
 
 class TestModelProps(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestModelProps(unittest.TestCase):
                 super().__init__()
                 self.param = 1
 
-            @ModelProp()
+            @Feature()
             def param(self):
                 return self._param
 
@@ -21,11 +21,11 @@ class TestModelProps(unittest.TestCase):
             def param(self, val):
                 self._param = val
 
-            @ModelProp()
+            @Feature()
             def only_get(self):
                 return 1
 
-            @ModelProp
+            @Feature
             def with_call(self):
                 return 2
 

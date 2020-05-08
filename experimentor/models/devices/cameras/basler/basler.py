@@ -9,7 +9,7 @@ from experimentor.models.cameras.exceptions import WrongCameraState
 from experimentor.models.devices.cameras.base_camera import BaseCamera
 from experimentor.models.devices.cameras.exceptions import CameraNotFound
 # noinspection SpellCheckingInspection
-from experimentor.models.model_properties import ModelProp
+from experimentor.models.features import Feature
 
 
 class BaslerCamera(BaseCamera):
@@ -56,7 +56,7 @@ class BaslerCamera(BaseCamera):
 
         self.config.fetch_all()
 
-    @ModelProp()
+    @Feature()
     def exposure(self) -> Q_:
         """ The exposure of the camera, defined in units of time """
         if self.config['exposure'] is not None:
@@ -80,7 +80,7 @@ class BaslerCamera(BaseCamera):
         except _genicam.TimeoutException:
             self.logger.error(f'Timed out setting the exposure to {exposure}')
 
-    @ModelProp()
+    @Feature()
     def gain(self):
         """ Gain is a float """
         try:
@@ -97,7 +97,7 @@ class BaslerCamera(BaseCamera):
         except _genicam.TimeoutException:
             self.logger.error('Problem setting the gain')
 
-    @ModelProp()
+    @Feature()
     def acquisition_mode(self):
         return self._acquisition_mode
 
@@ -115,7 +115,7 @@ class BaslerCamera(BaseCamera):
             self.logger.debug(f'Setting buffer to 1')
             self._acquisition_mode = mode
 
-    @ModelProp()
+    @Feature()
     def auto_exposure(self):
         """ Auto exposure can take one of three values: Off, Once, Continuous """
         return self._driver.ExposureAuto.Value
@@ -127,7 +127,7 @@ class BaslerCamera(BaseCamera):
             raise ValueError(f'Mode must be one of {modes} and not {mode}')
         self._driver.ExposureAuto.SetValue(mode)
 
-    @ModelProp()
+    @Feature()
     def auto_gain(self):
         """ Auto Gain must be one of three values: Off, Once, Continuous"""
         return self._driver.GainAuto.Value
@@ -139,7 +139,7 @@ class BaslerCamera(BaseCamera):
             raise ValueError(f'Mode must be one of {modes} and not {mode}')
         self._driver.GainAuto.SetValue(mode)
 
-    @ModelProp()
+    @Feature()
     def pixel_format(self):
         """ Pixel format must be one of Mono8, Mono12, Mono12p"""
         return self._driver.PixelFormat.GetValue()
@@ -149,7 +149,7 @@ class BaslerCamera(BaseCamera):
         self.logger.info(f'Setting pixel format to {mode}')
         self._driver.PixelFormat.SetValue(mode)
 
-    @ModelProp()
+    @Feature()
     def ROI(self):
         offset_X = self._driver.OffsetX.Value
         offset_Y = self._driver.OffsetY.Value
@@ -183,11 +183,11 @@ class BaslerCamera(BaseCamera):
         self.width = self._driver.Width.Value
         self.height = self._driver.Height.Value
 
-    @ModelProp()
+    @Feature()
     def ccd_height(self):
         return self._driver.Height.Max
 
-    @ModelProp()
+    @Feature()
     def ccd_width(self):
         return self._driver.Width.Max
 

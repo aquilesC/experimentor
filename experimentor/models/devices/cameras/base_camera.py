@@ -32,7 +32,7 @@ from experimentor import Q_
 from experimentor.lib.log import get_logger
 from experimentor.models.decorators import not_implemented
 from experimentor.models.devices.base_device import ModelDevice
-from experimentor.models.model_properties import ModelProp
+from experimentor.models.features import Feature
 
 
 class BaseCamera(ModelDevice):
@@ -152,7 +152,7 @@ class BaseCamera(ModelDevice):
         """ Triggers the camera. """
         pass
 
-    @ModelProp()
+    @Feature()
     @not_implemented
     def acquisition_mode(self):
         """ Set the readout mode of the camera: Single or continuous.
@@ -171,7 +171,7 @@ class BaseCamera(ModelDevice):
         """
         pass
 
-    @ModelProp()
+    @Feature()
     @not_implemented
     def exposure(self):
         """ Sets the exposure of the camera. """
@@ -188,7 +188,7 @@ class BaseCamera(ModelDevice):
         """
         pass
 
-    @ModelProp
+    @Feature
     @not_implemented
     def ROI(self):
         """ Sets up the ROI. Not all cameras are 0-indexed, so this is an important place to define the proper ROI.
@@ -209,21 +209,21 @@ class BaseCamera(ModelDevice):
         """
         self.ROI = ((0, self.config['max_width']-1), (0, self.config['max_height']-1))
 
-    @ModelProp()
+    @Feature()
     @not_implemented
     def serial_number(self):
         """ Returns the serial number of the camera, or a way of identifying the camera in an experiment.
         """
         pass
 
-    @ModelProp()
+    @Feature()
     @not_implemented
     def ccd_width(self):
         """ Returns the CCD width in pixels this is equivalent to the :attr:`max_width`
         """
         pass
 
-    @ModelProp()
+    @Feature()
     @not_implemented
     def ccd_height(self):
         """ Returns the CCD height in pixels this is equivalent to the :attr:`max_height`
@@ -235,7 +235,7 @@ class BaseCamera(ModelDevice):
         """Stops the acquisition without closing the connection to the camera."""
         pass
 
-    @ModelProp()
+    @Feature()
     @not_implemented
     def gain(self):
         """Sets the gain on the camera, if possible
@@ -251,7 +251,7 @@ class BaseCamera(ModelDevice):
     def gain(self, value):
         pass
 
-    @ModelProp()
+    @Feature()
     @not_implemented
     def binning(self):
         """ The binning of the camera if supported. Has to check if binning in X/Y can be different or not, etc.
