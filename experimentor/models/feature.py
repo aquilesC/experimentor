@@ -8,8 +8,20 @@
     For example, a feature could be the value of an analog input on a DAQ, or the temperature of a camera. They are
     meant to be part of a measurement, for example their values can change in loops in order to make a scan. Features can
     be used as decorators in pretty much the same way @propery can be used. The only difference is that they register in
-    the models properties object, so it is possible to update values either by submitting a value directly to the Featire
+    the models properties object, so it is possible to update values either by submitting a value directly to the Feature
     or by sending a dictionary to the properties and updating all at once.
+
+    It is possible to mark a feature as a setting. In this case, the value will not be read from the device, but it will
+    be cached. In case it is needed to refresh a value from the device, it is possible to use a specific argument, such
+    as ``None``. For example::
+
+        @Feature(setting=True, force_update_arg=0)
+        def exposure(self):
+            self.driver.get_exposure()
+
+        @exposure.setter
+        def exposure(self, exposure_time):
+            self.driver.set_exposure(exposure_time)
 
     .. TODO:: It is possible to define complex behavior such as unit conversion, limit checking, etc. We should narrow
         down what is appropriate for a model and what should go into the Controller.
@@ -37,12 +49,19 @@ class Feature:
         self.kwargs = kwargs
         self.owner = None
 
+        self.is_setting = self.kwargs.get('setting', False)
+        self.force_update = self.kwargs.get('force_update_arg', None)
+        self.value = None
+
     def __get__(self, instance, owner):
         if instance is None:
             return self
         if self.fget is None:
             raise AttributeError("unreadable attribute")
-        self.instance = instance
+
+        if self.is_setting and self.value != self.force_update:
+            return self.value
+
         val = self.fget(instance)
         instance.config.upgrade({self.name: val}, force=True)
         return val
@@ -50,7 +69,11 @@ class Feature:
     def __set__(self, instance, value):
         if self.fset is None:
             raise AttributeError("can't set attribute")
-        self.fset(instance, value)
+        if self.is_setting and self.force_update == value:
+            value = self.fget(instance)
+        else:
+            self.fset(instance, value)
+        self.value = value
         instance.config.upgrade({self.name: value}, force=True)
 
     def __set_name__(self, owner, name):
