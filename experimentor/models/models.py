@@ -16,19 +16,27 @@ class ExpDict(dict):
     pass
 
 
+class ExpList(list):
+    lock = mp.Lock()
+
+
 class BaseModel(metaclass=MetaModel):
     """All models should inherit from this base model. It defines some basic methods and checks that prevent errors
     later at runtime.
 
     Attributes
     ----------
-    _model_props : ExpDict
+    _features : ExpDict
         Dictionary-like object to store the properties of the model
+    _actions: ExpList
+        List-like object to store the available actions. It also stores a lock to prevent multiple actions to be
+        triggered at the same time
     _settings : ExpDict
         Dictionary-like object where the settings are stored. This dictionary is also used to retrieve the latest known
         value of the setting.
     """
-    _model_props = ExpDict()
+    _features = ExpDict()
+    _actions = ExpList()
     _settings = ExpDict()
 
     def __init__(self):

@@ -8,7 +8,6 @@
     the value *from* the device. It is expected that settings do not change over time, and therefore, unless the user
     explicitly forces the update of a value, the setting is stored in a cache and always retrieved from there. This
     allows to access settings are often as needed, without choking the device.
-
 """
 from experimentor.models.exceptions import ModelException
 

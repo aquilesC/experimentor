@@ -70,7 +70,7 @@ class Properties:
             return {key: self._properties[key]['value']}
         if item in self._properties:
             return self._properties[item]['value']
-        if item in self._parent._model_props:
+        if item in self._parent._features:
             return None
         raise KeyError(f'Property {item} unknown')
 
@@ -127,7 +127,7 @@ class Properties:
             return value
         else:
             # It may be a Model Property that has not been linked yet
-            if prop in self._parent._model_props:
+            if prop in self._parent._features:
                 self._links.update({prop: [prop, prop]})
                 return self.fetch(prop)
             self.logger.error(f'{prop} is not a valid property')
@@ -138,7 +138,7 @@ class Properties:
         not alter the to_update flag, new_value, nor old_value.
         """
         self.logger.info(f'Fetching all properties of {self._parent}')
-        keys = {key for key in self._links} | {key for key in self._parent._model_props}
+        keys = {key for key in self._links} | {key for key in self._parent._features}
         for key in keys:
             value = self.fetch(key)
             self.upgrade({key: value}, force=True)
@@ -180,7 +180,7 @@ class Properties:
                 raise PropertyException('Trying to update a property which is not registered')
         else:
             # The property may have been defined as a Model Property, we can add it to the links
-            if property in self._parent._model_props:
+            if property in self._parent._features:
                 self._links.update({property: [property, property]})
                 self.apply(property)
             else:
@@ -246,7 +246,7 @@ class Properties:
 
     def autolink(self):
         """ Links the properties defined as :class:`~ModelProp` in the models using their setters and getters. """
-        for prop_name, prop in self._parent._model_props.items():
+        for prop_name, prop in self._parent._features.items():
             if prop.fset:
                 self.link({
                     prop_name: [prop.fget.__name__, prop.fset.__name__]
