@@ -31,6 +31,7 @@ from experimentor import Q_
 from experimentor.lib.log import get_logger
 from experimentor.models.decorators import not_implemented
 from experimentor.models.models import BaseModel
+from experimentor.models.properties import Properties
 
 logger = get_logger(__name__)
 
@@ -47,12 +48,10 @@ class BaseCamera(BaseModel):
 
     def __init__(self, camera):
         super().__init__()
+        self.camera = camera
+        self.config = Properties(self)
         self.cam_num = camera
         self.running = False
-        self.max_width = 0
-        self.max_height = 0
-        self.exposure = 0
-        self.config = {}
         self.data_type = np.uint16  # The data type that the camera generates when acquiring images. It is very
                                     # important to have it available in order to create the buffer and saving to disk.
 
