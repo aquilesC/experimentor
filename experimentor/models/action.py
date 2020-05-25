@@ -10,7 +10,6 @@
 
 """
 import threading
-
 from experimentor.models.models import ExpList
 
 
@@ -28,6 +27,7 @@ class Action:
         if getattr(model_actions, 'model_name', None) != object.__qualname__:
             actions = model_actions.__class__(*model_actions)
             setattr(actions, 'model_name', object.__qualname__)
+            setattr(actions, 'lock', threading.Lock())
             owner._actions = actions
 
         owner._actions.append(name)
@@ -40,8 +40,7 @@ class Action:
             method(instance)
 
         with self.get_lock():
-            self.thread = threading.Thread(target=run, args=(self.method, self.instance))
-            self.thread.start()
+            run(self.method, self.instance)
 
     def get_lock(self):
         return self.kwargs.get('lock', self.instance._actions.lock)
