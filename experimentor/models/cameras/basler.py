@@ -1,5 +1,5 @@
 """
-    Basler Camera Model
+    Basler BaslerCamera Model
     ===================
     Model to adapt PyPylon to the needs of PyNTA. PyPylon is only a wrapper for Pylon, thus the documentation
     has to be found in the folder where Pylon was installed. It refers only to the C++ documentation, which is
@@ -7,7 +7,7 @@
 
     Some assumptions
     ----------------
-    The program forces software trigger during :meth:`~pynta.model.cameras.basler.Camera.initialize`.
+    The program forces software trigger during :meth:`~pynta.model.cameras.basler.BaslerCamera.initialize`.
 """
 import logging
 import warnings
@@ -17,18 +17,18 @@ from pypylon import pylon
 
 from experimentor import Q_
 from experimentor.lib.log import get_logger
+from experimentor.models import Feature
+from experimentor.models.action import Action
 from experimentor.models.cameras.base_camera import BaseCamera
 from experimentor.models.cameras.exceptions import CameraNotFound, WrongCameraState, CameraException
 
 logger = get_logger(__name__)
 
 
-class Camera(BaseCamera):
+class BaslerCamera(BaseCamera):
     def __init__(self, camera):
         super().__init__(camera)
         self.cam_num = camera
-        self.max_width = 0
-        self.max_height = 0
         self.width = None
         self.height = None
         self.mode = None
@@ -36,6 +36,7 @@ class Camera(BaseCamera):
         self.Y = None
         self.friendly_name = None
 
+    @Action
     def initialize(self):
         """ Initializes the communication with the camera. Get's the maximum and minimum width. It also forces
         the camera to work on Software Trigger.
@@ -44,7 +45,7 @@ class Camera(BaseCamera):
             synchronize with other hardware.
 
         """
-        logger.debug('Initializing Basler Camera')
+        logger.debug('Initializing Basler BaslerCamera')
         tl_factory = pylon.TlFactory.GetInstance()
         devices = tl_factory.EnumerateDevices()
         if len(devices) == 0:
@@ -64,8 +65,6 @@ class Camera(BaseCamera):
 
         logger.info(f'Loaded camera {self.camera.GetDeviceInfo().GetModelName()}')
 
-        self.max_width = self.camera.Width.Max
-        self.max_height = self.camera.Height.Max
         offsetX = self.camera.OffsetX.Value
         offsetY = self.camera.OffsetY.Value
         width = self.camera.Width.Value
@@ -75,11 +74,28 @@ class Camera(BaseCamera):
 
         self.camera.RegisterConfiguration(pylon.SoftwareTriggerConfiguration(), pylon.RegistrationMode_ReplaceAll,
                                           pylon.Cleanup_Delete)
-        self.set_acquisition_mode(self.MODE_SINGLE_SHOT)
-        self.get_size()
-        self.get_exposure()
+        self.acquisition_mode = self.MODE_SINGLE_SHOT
 
-    def set_acquisition_mode(self, mode):
+    @Feature(setting=True)
+    def max_width(self):
+        return self.camera.Width.Max
+
+    @Feature(setting=True)
+    def max_height(self):
+        return self.camera.Height.Max
+
+    @Feature
+    def acquisition_mode(self):
+        mode = self.camera.AcquisitionMode.Value
+        if mode == 'Continuous':
+            return self.MODE_CONTINUOUS
+        elif mode == 'SingleFrame':
+            return self.MODE_SINGLE_SHOT
+        else:
+            raise CameraException(f'Mode {mode} has not been implemented in the model yet')
+
+    @acquisition_mode.setter
+    def acquisition_mode(self, mode):
         logger.info(f'Setting acquisition mode to {mode}')
         if mode == self.MODE_CONTINUOUS:
             logger.debug(f'Setting buffer to {self.camera.MaxNumBuffer.Value}')
@@ -92,7 +108,16 @@ class Camera(BaseCamera):
 
         self.camera.AcquisitionStart.Execute()
 
-    def set_ROI(self, X: Tuple[int, int], Y: Tuple[int, int]) -> Tuple[int, int]:
+    @Feature
+    def ROI(self):
+        x_pos = self.camera.OffsetX.Value
+        width = self.camera.Width.Value
+        y_pos = self.camera.OffsetY.Value
+        height = self.camera.Height.Value
+        return (x_pos, x_pos+width-1), (y_pos, y_pos+width-1)
+
+    @ROI.setter
+    def ROI(self, X: Tuple[int, int], Y: Tuple[int, int]) -> Tuple[int, int]:
         """ Set up the region of interest of the camera. Basler calls this the
         Area of Interest (AOI) in their manuals. Beware that not all cameras allow
         to set the ROI (especially if they are not area sensors).
@@ -130,8 +155,8 @@ class Camera(BaseCamera):
         self.Y = (y_pos, y_pos+width)
         self.width = self.camera.Width.Value
         self.height = self.camera.Height.Value
-        return self.width, self.height
 
+    @Action
     def clear_ROI(self):
         """ Resets the ROI to the maximum area of the camera"""
         self.camera.OffsetX.SetValue(self.camera.OffsetX.Min)
@@ -139,31 +164,8 @@ class Camera(BaseCamera):
         self.camera.Width.SetValue(self.camera.Width.Max)
         self.camera.Height.SetValue(self.camera.Height.Max)
 
-    def GetCCDWidth(self) -> int:
-        """ Get the full width of the camera sensor.
-
-        :return int: Maximum width
-
-        .. deprecated:: 0.1.3
-           Use self.max_width instead
-
-        """
-        warnings.warn("This method will be removed in a future release. Use cls.max_width instead", DeprecationWarning)
-        return self.max_width
-
-    def GetCCDHeight(self) -> int:
-        """ Get the full height (in pixels) of the camera sensor.
-
-        :return int: Maximum height
-
-        .. deprecated:: 0.1.3
-            Use self.max_height instead
-
-        """
-        warnings.warn("This method will be removed in a future release. Use cls.max_height instead", DeprecationWarning)
-        return self.max_height
-
-    def get_size(self) -> Tuple[int, int]:
+    @Feature
+    def size(self) -> Tuple[int, int]:
         """ Get the size of the current Region of Interest (ROI). Remember that the actual size may be different from
         the size that the user requests, given that not all cameras accept any pixel. For example, Basler has some
         restrictions regarding corner pixels and possible widths.
@@ -182,14 +184,13 @@ class Camera(BaseCamera):
                 self.camera.StartGrabbing(1)
         self.camera.ExecuteSoftwareTrigger()
 
-    def set_exposure(self, exposure: Q_) -> Q_:
-        self.camera.ExposureTime.SetValue(exposure.m_as('us'))
-        self.exposure = exposure
-        return self.get_exposure()
+    @Feature
+    def exposure(self) -> Q_:
+        return float(self.camera.ExposureTime.ToString()) * Q_('us')
 
-    def get_exposure(self) -> Q_:
-        self.exposure = float(self.camera.ExposureTime.ToString()) * Q_('us')
-        return self.exposure
+    @exposure.setter
+    def exposure(self, exposure: Q_) -> Q_:
+        self.camera.ExposureTime.SetValue(exposure.m_as('us'))
 
     def read_camera(self):
         if not self.camera.IsGrabbing():
@@ -223,10 +224,13 @@ class Camera(BaseCamera):
         self.stop_acquisition()
         self.camera.Close()
 
+    def finalize(self):
+        self.stop_camera()
+
     def __str__(self):
         if self.friendly_name:
             return self.friendly_name
-        return "Basler Camera"
+        return "Basler BaslerCamera"
 
 
 if __name__ == '__main__':
@@ -239,13 +243,13 @@ if __name__ == '__main__':
     ch.setFormatter(formatter)
     logger.addHandler(ch)
     logger.info('Starting Basler')
-    basler = Camera(0)
+    basler = BaslerCamera('da')
     basler.initialize()
-    basler.set_acquisition_mode(basler.MODE_SINGLE_SHOT)
-    basler.set_exposure(Q_('.02s'))
+    basler.acquisition_mode = basler.MODE_SINGLE_SHOT
+    basler.exposure = Q_('.02s')
     basler.trigger_camera()
     print(len(basler.read_camera()))
-    basler.set_acquisition_mode(basler.MODE_CONTINUOUS)
+    basler.acquisition_mode = basler.MODE_CONTINUOUS
     basler.trigger_camera()
     sleep(1)
     imgs = basler.read_camera()
