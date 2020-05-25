@@ -67,10 +67,13 @@ class Feature:
         return val
 
     def __set__(self, instance, value):
-        if self.fset is None:
+        if self.fset is None and not self.is_setting:
             raise AttributeError("can't set attribute")
-        if self.is_setting and self.force_update == value:
-            value = self.fget(instance)
+        if self.is_setting:
+            if self.force_update == value:
+                value = self.fget(instance)
+            else:
+                raise AttributeError(f"Can't set a setting, and {value} is not the value to trigger a reset. Should be {self.force_update}")
         else:
             self.fset(instance, value)
         self.value = value
@@ -79,16 +82,22 @@ class Feature:
     def __set_name__(self, owner, name):
         # The following code is to work around inheritance in only one direction. This means that only child classes
         # should inherit properties of their parents, but not the other way around.
-        model_props = owner._model_props
+        if self.is_setting:
+            model_props_var = '_settings'
+        else:
+            model_props_var = '_features'
+
+        model_props = getattr(owner, model_props_var)
+
         if getattr(model_props, 'model_name', None) != object.__qualname__:
             # If the name of the class is different from the name registered as a property, we must create a new
             # instance, using the information already available
 
             model_props = model_props.__class__(**model_props)
             setattr(model_props, 'model_name', object.__qualname__)
-            owner._model_props = model_props
+            setattr(owner, model_props_var, model_props)
 
-        owner._model_props[name] = self
+        model_props[name] = self
 
     def __call__(self, func):
         if self.fget is None:
