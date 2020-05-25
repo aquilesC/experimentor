@@ -29,8 +29,8 @@ import warnings
 from typing import List
 
 from experimentor.lib.log import get_logger
+from experimentor.models import BaseModel
 from experimentor.models.exceptions import LinkException, PropertyException
-from experimentor.models.models import BaseModel
 
 
 class Properties:
