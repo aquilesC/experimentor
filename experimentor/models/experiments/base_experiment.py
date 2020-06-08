@@ -180,7 +180,7 @@ class Experiment(BaseExperiment):
         })
         self._connections[-1]['process'].start()
 
-    def load_configuration(self, filename):
+    def load_configuration(self, filename, loader=yaml.SafeLoader):
         """ Loads the configuration file in YAML format.
 
         :param str filename: full path to where the configuration file is located.
@@ -189,7 +189,7 @@ class Experiment(BaseExperiment):
         self.logger.info('Loading configuration file {}'.format(filename))
         try:
             with open(filename, 'r') as f:
-                self.config = yaml.load(f, Loader=yaml.SafeLoader)
+                self.config = yaml.load(f, Loader=loader)
                 self.logger.debug('Config loaded')
                 self.logger.debug(self.config)
         except FileNotFoundError:

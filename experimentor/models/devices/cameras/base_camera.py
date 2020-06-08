@@ -32,7 +32,7 @@ from experimentor import Q_
 from experimentor.lib.log import get_logger
 from experimentor.models.decorators import not_implemented
 from experimentor.models.devices.base_device import ModelDevice
-from experimentor.models.features import Feature
+from experimentor.models import Feature
 
 
 class BaseCamera(ModelDevice):

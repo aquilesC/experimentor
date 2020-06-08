@@ -5,11 +5,11 @@ from pypylon import pylon, _genicam
 
 from experimentor import Q_
 from experimentor.lib.log import get_logger
-from experimentor.models.cameras.exceptions import WrongCameraState
+from experimentor.models.devices.cameras.exceptions import WrongCameraState
 from experimentor.models.devices.cameras.base_camera import BaseCamera
 from experimentor.models.devices.cameras.exceptions import CameraNotFound
 # noinspection SpellCheckingInspection
-from experimentor.models.features import Feature
+from experimentor.models import Feature
 
 
 class BaslerCamera(BaseCamera):
