@@ -123,6 +123,11 @@ class BaslerCamera(BaseCamera):
     @auto_exposure.setter
     def auto_exposure(self, mode: str):
         modes = ('Off', 'Once', 'Continuous')
+        if mode is False:
+            mode = 'Off'
+        if mode is True:
+            mode = 'Once'
+
         if mode not in modes:
             raise ValueError(f'Mode must be one of {modes} and not {mode}')
         self._driver.ExposureAuto.SetValue(mode)
@@ -134,7 +139,12 @@ class BaslerCamera(BaseCamera):
 
     @auto_gain.setter
     def auto_gain(self, mode):
+
         modes = ('Off', 'Once', 'Continuous')
+        if mode is False:
+            mode = 'Off'
+        if mode is True:
+            mode = 'Once'
         if mode not in modes:
             raise ValueError(f'Mode must be one of {modes} and not {mode}')
         self._driver.GainAuto.SetValue(mode)
