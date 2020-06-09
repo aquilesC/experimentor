@@ -163,7 +163,8 @@ class Properties:
                     setter = self._links[property][1]
                     if setter is not None:
                         property_value['old_value'] = property_value['value']
-                        new_value = property_value['new_value'] or property_value['value']
+                        new_value = property_value['new_value']
+
                         if callable(setter):
                             value = setter(new_value)
                         else:
