@@ -5,15 +5,14 @@
 """
 import PyDAQmx as nidaq
 import numpy as np
-from PyDAQmx import *
 
 
 class niDAQ():
     """Class for controlling a National Instruments NI-6251 DAQ.
     If using an expansion such as the SCC-68 it has to be properly configured through the NI-MAX software.
     """
-    def __init__(self,device_number=1,model='6251',debug=0):
-        self.read = int32()
+    def __init__(self,device_number=1, model='6251',debug=0):
+        self.read = nidaq.int32()
         if debug == 1:
             print('Not implemented a debuggable version')
         else:
@@ -43,20 +42,20 @@ class niDAQ():
         limits -- the limits of the expected values. A tuple of 2 values.
         Returns: numpy array of length points
         """
-        taskAnalogNumber = self.addTask({'name':'TaskAnalog','TaskHandle':TaskHandle()})
+        taskAnalogNumber = self.addTask({'name':'TaskAnalog','TaskHandle':nidaq.TaskHandle()})
         self.task_Analog = self.getTask(taskAnalogNumber)['TaskHandle']
-        self.read = int32()
+        self.read = nidaq.int32()
         points = int(points)
         data = np.zeros((points,), dtype=np.float64)
         channel = str.encode(channel)
         waiting_time = points*accuracy*1.05 # Adds a 5% waiting time in order to give enough time
         freq = 1/accuracy # Accuracy in seconds
-        DAQmxCreateTask("",byref(self.task_Analog))
-        DAQmxCreateAIVoltageChan(self.task_Analog,channel,"",DAQmx_Val_RSE,limits[0],limits[1],DAQmx_Val_Volts,None)
-        DAQmxCfgSampClkTiming(self.task_Analog,"",freq,DAQmx_Val_Rising,DAQmx_Val_FiniteSamps,points)
+        nidaq.DAQmxCreateTask("",nidaq.byref(self.task_Analog))
+        nidaq.DAQmxCreateAIVoltageChan(self.task_Analog,channel,"",nidaq.DAQmx_Val_RSE,limits[0],limits[1],nidaq.DAQmx_Val_Volts,None)
+        nidaq.DAQmxCfgSampClkTiming(self.task_Analog,"",freq,nidaq.DAQmx_Val_Rising,nidaq.DAQmx_Val_FiniteSamps,points)
         # DAQmx Start Code
-        DAQmxStartTask(self.task_Analog)
-        DAQmxReadAnalogF64(self.task_Analog,points,waiting_time,DAQmx_Val_GroupByChannel,data,points,byref(self.read),None)
+        nidaq.DAQmxStartTask(self.task_Analog)
+        nidaq.DAQmxReadAnalogF64(self.task_Analog,points,waiting_time,nidaq.DAQmx_Val_GroupByChannel,data,points,nidaq.byref(self.read),None)
         self.tasks[taskAnalogNumber]['alive'] = 0
         return data
 
@@ -68,7 +67,7 @@ class niDAQ():
         accuracy -- the time between acquisitions (in seconds)
         limits -- the limits of the expected values. A tuple of 2 values.
         """
-        taskAnalogNumber = self.addTask({'name':'TaskAnalog','TaskHandle':TaskHandle(taskNum)})
+        taskAnalogNumber = self.addTask({'name':'TaskAnalog','TaskHandle':nidaq.TaskHandle(taskNum)})
         self.task_Analog = self.getTask(taskAnalogNumber)['TaskHandle']
         points = int(points)
         dev = 'Dev%s'%self.deviceNumber
@@ -81,40 +80,40 @@ class niDAQ():
         channels = ', '.join(channels)
         channels = str.encode(channels)
         freq = 1/accuracy # Accuracy in seconds
-        DAQmxCreateTask("",byref(self.task_Analog))
-        DAQmxCreateAIVoltageChan(self.task_Analog,channels,None,DAQmx_Val_RSE,limits[0],limits[1],DAQmx_Val_Volts,None)
+        nidaq.DAQmxCreateTask("",nidaq.byref(self.task_Analog))
+        nidaq.DAQmxCreateAIVoltageChan(self.task_Analog,channels,None,nidaq.DAQmx_Val_RSE,limits[0],limits[1],nidaq.DAQmx_Val_Volts,None)
         if points>0:
-            DAQmxCfgSampClkTiming(self.task_Analog,"",freq,DAQmx_Val_Rising,,points)
+            nidaq.DAQmxCfgSampClkTiming(self.task_Analog,"",freq,nidaq.DAQmx_Val_Rising,nidaq.DAQmx_Val_FiniteSamps,points)
         else:
-            DAQmxCfgSampClkTiming(self.task_Analog,"",freq,DAQmx_Val_Rising,DAQmx_Val_ContSamps,points)
+            nidaq.DAQmxCfgSampClkTiming(self.task_Analog,"",freq,nidaq.DAQmx_Val_Rising,nidaq.DAQmx_Val_ContSamps,points)
         return taskAnalogNumber
 
     def analogTrigger(self,taskNumber):
         """Triggers the analog measurement.
         """
         self.task_Analog = self.getTask(taskNumber)['TaskHandle']
-        if type(self.task_Analog) != type(TaskHandle()):
+        if type(self.task_Analog) != type(nidaq.TaskHandle()):
             raise Exception('Triggering an analog measurement before defining it')
         else:
             # DAQmx Start Code
-            DAQmxStartTask(self.task_Analog)
+            nidaq.DAQmxStartTask(self.task_Analog)
 
     def analogRead(self,taskNumber,points,waiting=1):
         """Reads a number of points from the analog task.
         Returns the total number of data points per channel acquired and a numpy array of length values*channels.
         """
         self.task_Analog = self.getTask(taskNumber)['TaskHandle']
-        if type(self.task_Analog) != type(TaskHandle()):
+        if type(self.task_Analog) != type(nidaq.TaskHandle()):
             raise Exception('Reading an analog measurement before defining it')
         else:
-            self.read = int32()
+            self.read = nidaq.int32()
             points = int(points)
             if points>0:
                 data = np.zeros((points,), dtype=np.float64)
-                DAQmxReadAnalogF64(self.task_Analog,points,waiting,DAQmx_Val_GroupByChannel,data,points,byref(self.read),None)
+                nidaq.DAQmxReadAnalogF64(self.task_Analog,points,waiting,nidaq.DAQmx_Val_GroupByChannel,data,points,nidaq.byref(self.read),None)
             else:
                 data = np.zeros((10000,), dtype=np.float64) # Defining a 10000 value that is completely arbitrary
-                DAQmxReadAnalogF64(self.task_Analog,points,.2,DAQmx_Val_GroupByChannel,data,points,byref(self.read),None)
+                nidaq.DAQmxReadAnalogF64(self.task_Analog,points,.2,nidaq.DAQmx_Val_GroupByChannel,data,points,nidaq.byref(self.read),None)
             values = self.read.value
             return values,data
 
