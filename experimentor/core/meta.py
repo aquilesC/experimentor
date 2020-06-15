@@ -1,5 +1,6 @@
 import weakref
 from multiprocessing.context import Process
+from threading import Thread
 
 
 class MetaProcess(type):
@@ -35,4 +36,8 @@ class MetaProcess(type):
 
 
 class ExperimentorProcess(Process, metaclass=MetaProcess):
+    pass
+
+
+class ExperimentorThread(Thread, metaclass=MetaProcess):
     pass
