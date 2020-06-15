@@ -4,7 +4,7 @@ from threading import Thread
 
 from experimentor.config import settings
 from experimentor.core import Publisher
-from experimentor.core.meta import MetaProcess, ExperimentorProcess
+from experimentor.core.meta import ExperimentorProcess
 from experimentor.lib.log import get_logger, log_to_screen
 from experimentor.models.devices.base_device import ModelDevice
 from experimentor.models.experiments.base_experiment import BaseExperiment
