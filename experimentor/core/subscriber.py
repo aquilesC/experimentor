@@ -18,41 +18,43 @@ from experimentor.core.meta import MetaProcess
 from experimentor.core.pusher import Pusher
 from experimentor.lib.log import get_logger
 
+logger = get_logger(__name__)
+
 
 class Subscriber(Thread, metaclass=MetaProcess):
-    def __init__(self, func, topic):
+    def __init__(self, func, url, topic):
         super(Subscriber, self).__init__()
+        logger.info(f'Starting subscriber for {func.__name__} on topic {topic}')
         self.func = func
-        self.topic = topic
-        self.logger = get_logger()
-        self.logger.info(f'Starting subscriber for {func.__name__} on topic {topic}')
+        context = zmq.Context()
+        self.socket = context.socket(zmq.SUB)
+        self.socket.connect(url)
+        self.socket.setsockopt(zmq.SUBSCRIBE, b"")  # topic.encode('utf-8'))
+        self.start()
 
     def run(self):
-        context = zmq.Context()
-        socket = context.socket(zmq.SUB)
-        socket.connect(f"tcp://localhost:{settings.PUBLISHER_PUBLISH_PORT}")
-        topic_filter = self.topic.encode('utf-8')
-        socket.setsockopt(zmq.SUBSCRIBE, topic_filter)
-        self.logger.info(f'subscriber for {self.func.__name__} on topic {self.topic} ready')
-
         while not settings.GENERAL_STOP_EVENT.is_set():
-            topic = socket.recv_string()
-            self.logger.debug(f"Got data on topic {topic}")
-            metadata = socket.recv_json(flags=0)
+            event = self.socket.poll(0)
+            if not event:
+                sleep(.005)
+                continue
+            topic = self.socket.recv_string()
+            logger.debug(f"Got data on topic {topic}")
+            metadata = self.socket.recv_json(flags=0)
             if metadata.get('numpy', False):
-                msg = socket.recv(flags=0, copy=True, track=False)
+                msg = self.socket.recv(flags=0, copy=True, track=False)
                 buf = memoryview(msg)
                 data = np.frombuffer(buf, dtype=metadata['dtype'])
                 data = data.reshape(metadata['shape']).copy()
             else:
-                data = socket.recv_pyobj()  # flags=0, copy=True, track=False)
+                data = self.socket.recv_pyobj()  # flags=0, copy=True, track=False)
             if isinstance(data, str):
                 if data == settings.SUBSCRIBER_EXIT_KEYWORD:
-                    self.logger.info(f'Stopping Subscriber {self}')
+                    logger.info(f'Stopping Subscriber {self}')
                     break
             self.func(data)#, *self.args, **self.kwargs)
         sleep(1)  # Gives enough time for the publishers to finish sending data before closing the socket
-        socket.close()
+        self.socket.close()
 
     def stop(self):
         with Pusher() as pusher:

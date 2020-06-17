@@ -1,5 +1,3 @@
-from experimentor.core.pusher import Pusher
-from experimentor.core.subscriber import Subscriber
 from experimentor.lib.log import get_logger
 
 
@@ -7,78 +5,43 @@ logger = get_logger(__name__)
 
 
 class Signal:
-    instance = None
-    owner = None
-    name = None
     """ Base signal which implements the common pattern for defining, emiting and connecting a signal
     """
+    def __init__(self):
+        self.name = None
+
     def __set_name__(self, owner, name):
+        model_signals = getattr(owner, '_signals')
+
+        if getattr(model_signals, 'model_name', None) != object.__qualname__:
+            model_signals = model_signals.__class__(*model_signals)
+            setattr(model_signals, 'model_name', object.__qualname__)
+            setattr(owner, '_signals', model_signals)
+
+        model_signals[name] = self
+
         self.name = name
-        self.owner = owner
-        self.instace = None
-        self.pusher = None
-        self.subscribers = []
-        if owner is not None:
-            if not hasattr(owner, '_signals'):
-                owner._signals = {self.name: self}
-            else:
-                owner._signals.update({self.name: self})
+        self.owner = str(owner)
 
     def __get__(self, instance, owner):
-        if instance is None:
-            return self
-        self.instace = instance
-        return instance._signals[self.name]
+        self.instance = instance
+        return self
 
-    def __set__(self, instance, value):
-        raise AttributeError('Signals can\'t be overwritten')
+    def emit(self, payload=None, **kwargs):
+        """ Emitting a signal relies on the owner's publisher or whatever method the owner specifies for broadcasting.
+        In principle this allows for some flexibility in case owners use different ways of broadcasting information.
+        For example, the owner could be a QObject and it could use the internals of Qt to emitting signals.
 
-    def emit(self, *args, **kwargs):
-        if len(self.subscribers):
-            logger.debug(f'Emitting {self}(args={args})(kwargs={kwargs}) to {len(self.subscribers)} subscribers')
-            data = {}
-            if args:
-                data['args'] = args
-            if kwargs:
-                data['kwargs'] = kwargs
-
-            self.pusher.publish(data, self.topic)
-
-            return
-        logger.debug(f'Emitting {self} to {len(self.subscribers)} subscribers')
-
-    def connect(self, func):
-        """ Connects a signal to a given function. If it is the first connection which is made, a socket will be created
-        to publish the data. This may be time consuming, sometimes when creating sockets it is necessary to wait for few
-        seconds. It also starts a subscriber for the given function, which may add even more delay to the instantiation.
         """
-        if not self.pusher:
-            logger.debug(f'Pusher not yet initialized on {self}')
-            self.pusher = Pusher()
-
-        logger.debug(f'Connecting {func.__name__} to {self}')
-        s = Subscriber(func, self.topic)
-        s.start()
-        self.instace._subscribers.append(s)
-        self.subscribers.append(func.__name__)
-
-    def disconnect(self, method):
-        pass
+        logger.debug(f'Emitting {self.name} from {self.owner}')
+        self.instance.emit(self.name, payload, **kwargs)
 
     @property
-    def topic(self):
-        if self.instace:
-            return f"{self.name}-{id(self.instance)}"
-        if self.owner:
-            return f"{self.name}-{id(self.owner)}"
-        return f"{self.name}-0"
+    def url(self):
+        return f"{self.instance.get_publisher_url()}:{self.instance.get_publisher_port()}"
 
     def __str__(self):
         return f"Signal {self.name} from {self.owner}"
 
     def __repr__(self):
         return f"Signal {self.name} from {self.owner}"
-
-    def __call__(self, *args, **kwargs):
-        print(self.instace)
-
