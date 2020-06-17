@@ -20,32 +20,6 @@ class MetaModel(type):
         # Create class
         super(MetaModel, cls).__init__(name, bases, attrs)
 
-        if {'_signals'} & set(attrs):
-            raise ModelDefinitionException('Experiments should not define the _signals attribute themselves')
-
-        if {'_subscribers'} & set(attrs):
-            raise ModelDefinitionException('Experiments should not define the _signals attribute themselves')
-
-        cls._signals = {}
-        for base in bases:
-            if hasattr(base, '_signals'):
-                cls._signals.update(base._signals)
-
-        cls._subscribers = []
-        for base in bases:
-            if hasattr(base, '_subscribers'):
-                cls._subscribers += base._subscribers
-
-        for attr, value in attrs.items():
-            if isinstance(value, Signal):
-                cls._signals[attr] = value
-                value._name = attr
-
-        if hasattr(cls, '__doc__') and cls.__doc__:
-            cls.__doc__ += f"Available signals: {cls._signals}"
-        else:
-            cls.__doc__ = f"Available signals: {cls._signals}"
-
         # Initialize fresh instance storage
         cls._instances = weakref.WeakSet()
         cls._models = weakref.WeakSet()
