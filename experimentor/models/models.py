@@ -7,7 +7,11 @@ Models can also take care of manipulating data, for example calculating an FFT a
 """
 import atexit
 import multiprocessing as mp
+import time
 from abc import abstractmethod
+import numpy as np
+
+import zmq
 
 from experimentor.models.meta import MetaModel
 
@@ -38,10 +42,53 @@ class BaseModel(metaclass=MetaModel):
     _features = ExpDict()
     _actions = ExpList()
     _settings = ExpDict()
+    _signals = ExpDict()
+    _subscribers = ExpDict()
 
     def __init__(self):
         atexit.register(self.finalize)
         self._threads = []
+        self._ctx = self.create_context()
+        self._publisher = self.create_publisher()
+
+    def create_context(self):
+        return zmq.Context()
+
+    def get_context(self):
+        return self._ctx
+
+    def create_publisher(self):
+        ctx = self.get_context()
+        publisher = ctx.socket(zmq.PUB)
+        publisher.bind('tcp://*:*')
+        time.sleep(2)
+        return publisher
+
+    def get_publisher(self):
+        return self._publisher
+
+    def get_publisher_url(self):
+        return 'tcp://localhost'
+
+    def get_publisher_port(self):
+        url = self.get_publisher().getsockopt(zmq.LAST_ENDPOINT).decode()
+        return url.rsplit(":")[-1]
+
+    def emit(self, signal_name, payload, **kwargs):
+        publisher = self.get_publisher()
+        publisher.send_string(signal_name, zmq.SNDMORE)
+        meta_data = dict(numpy=False)
+        if isinstance(payload, np.ndarray):
+            meta_data = dict(
+                numpy=True,
+                dtype=str(payload.dtype),
+                shape=payload.shape,
+            )
+            publisher.send_json(meta_data, 0 | zmq.SNDMORE)
+            publisher.send(payload, 0, copy=True, track=False)
+        else:
+            publisher.send_json(meta_data, 0 | zmq.SNDMORE)
+            publisher.send_pyobj(payload)
 
     def clean_up_threads(self):
         """ Keep only the threads that are alive.
@@ -60,9 +107,8 @@ class BaseModel(metaclass=MetaModel):
     def initialize(self):
         pass
 
-    @abstractmethod
     def finalize(self):
-        pass
+        self._publisher.close()
 
 
 class ProxyObject:
