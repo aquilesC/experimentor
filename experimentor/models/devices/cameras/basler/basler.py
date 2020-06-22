@@ -4,7 +4,9 @@ from threading import Event
 from pypylon import pylon, _genicam
 
 from experimentor import Q_
+from experimentor.core.signal import Signal
 from experimentor.lib.log import get_logger
+from experimentor.models.decorators import make_async_thread
 from experimentor.models.devices.cameras.exceptions import WrongCameraState, CameraException
 from experimentor.models.devices.cameras.base_camera import BaseCamera
 from experimentor.models.devices.cameras.exceptions import CameraNotFound
@@ -14,6 +16,7 @@ from experimentor.models import Feature
 
 class BaslerCamera(BaseCamera):
     _acquisition_mode = BaseCamera.MODE_SINGLE_SHOT
+    new_image = Signal()
 
     def __init__(self, camera):
         super().__init__(camera)
@@ -22,6 +25,7 @@ class BaslerCamera(BaseCamera):
         self.free_run_running = False
         self._stop_free_run = Event()
         self.fps = 0
+        self.keep_reading = False
 
     def initialize(self):
         """ Initializes the communication with the camera. Get's the maximum and minimum width. It also forces
@@ -253,6 +257,16 @@ class BaslerCamera(BaseCamera):
             self.temp_image = img[-1]
         return img
 
+    @make_async_thread
+    def continuous_reads(self):
+        self.keep_reading = True
+        while self.keep_reading:
+            imgs = self.read_camera()
+            if len(imgs) >= 1:
+                for img in imgs:
+                    self.new_image.emit(img)
+            time.sleep(self.exposure.m_as('s'))
+
     def start_free_run(self):
         """ Starts a free run from the camera. It will preserve only the latest image. It depends
         on how quickly the experiment reads from the camera whether all the images will be available
@@ -267,6 +281,10 @@ class BaslerCamera(BaseCamera):
         self.acquisition_mode = self.MODE_CONTINUOUS
         self.trigger_camera()  # Triggers the camera only once
 
+    @Feature()
+    def frame_rate(self):
+        return float(self._driver.ResultingFrameRate.Value)
+
     def stop_free_run(self):
         self._driver.StopGrabbing()
         self.free_run_running = False
@@ -279,6 +297,7 @@ class BaslerCamera(BaseCamera):
         self.stop_camera()
         self.clean_up_threads()
         super().finalize()
+
 
 
 if __name__ == '__main__':
