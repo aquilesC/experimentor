@@ -5,7 +5,7 @@ from pypylon import pylon, _genicam
 
 from experimentor import Q_
 from experimentor.lib.log import get_logger
-from experimentor.models.devices.cameras.exceptions import WrongCameraState
+from experimentor.models.devices.cameras.exceptions import WrongCameraState, CameraException
 from experimentor.models.devices.cameras.base_camera import BaseCamera
 from experimentor.models.devices.cameras.exceptions import CameraNotFound
 # noinspection SpellCheckingInspection
@@ -178,7 +178,7 @@ class BaslerCamera(BaseCamera):
         self.logger.info(f'Updating ROI: (x, y, width, height) = ({x_pos}, {y_pos}, {width}, {height})')
         self._driver.OffsetX.SetValue(0)
         self._driver.OffsetY.SetValue(0)
-        self._driver.Width.SetValue(self.ccd_height)
+        self._driver.Width.SetValue(self.ccd_width)
         self._driver.Height.SetValue(self.ccd_height)
         self.logger.debug(f'Setting width to {width}')
         self._driver.Width.SetValue(width)
@@ -189,7 +189,7 @@ class BaslerCamera(BaseCamera):
         self.logger.debug(f'Setting Y offset to {y_pos}')
         self._driver.OffsetY.SetValue(y_pos)
         self.X = (x_pos, x_pos + width)
-        self.Y = (y_pos, y_pos + width)
+        self.Y = (y_pos, y_pos + height)
         self.width = self._driver.Width.Value
         self.height = self._driver.Height.Value
 
@@ -219,6 +219,8 @@ class BaslerCamera(BaseCamera):
             self.logger.info('Grab Strategy: Latest Image')
         elif mode == self.MODE_LAST:
             self._driver.StartGrabbing(pylon.GrabStrategy_LatestImages)
+        else:
+            raise CameraException('Unknown acquisition mode')
         self._driver.ExecuteSoftwareTrigger()
         self.logger.info('Executed Software Trigger')
 
@@ -267,6 +269,7 @@ class BaslerCamera(BaseCamera):
 
     def stop_free_run(self):
         self._driver.StopGrabbing()
+        self.free_run_running = False
 
     def stop_camera(self):
         self._driver.StopGrabbing()
