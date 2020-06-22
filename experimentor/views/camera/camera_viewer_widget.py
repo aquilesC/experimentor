@@ -1,3 +1,4 @@
+import numpy as np
 import pyqtgraph as pg
 
 from PyQt5.QtCore import pyqtSignal, QTimer
@@ -94,7 +95,6 @@ class CameraViewerWidget(DataViewWidget):
 
         if not isinstance(max_size, list):
             max_size = self.last_image.shape
-
 
         self.hline1 = pg.InfiniteLine(angle=0, movable=True, hoverPen={'color': "FF0", 'width': 4})
         self.hline2 = pg.InfiniteLine(angle=0, movable=True, hoverPen={'color': "FF0", 'width': 4})
@@ -270,20 +270,3 @@ class CameraViewerWidget(DataViewWidget):
         instance.timer.timeout.connect(lambda: instance.update_image(camera.temp_image))
         instance.timer.start(refresh_time)
         return instance
-
-
-if __name__ == '__main__':
-    from PyQt5.QtWidgets import QApplication
-    import numpy as np
-
-    def click(x, y):
-        print(x, y)
-
-    fake_image = np.random.random((200, 200))
-    app = QApplication([])
-    win = CameraViewerWidget()
-    win.clicked_on_image.connect(click)
-    win.update_image(fake_image)
-    print(win.scene())
-    win.show()
-    app.exec()
