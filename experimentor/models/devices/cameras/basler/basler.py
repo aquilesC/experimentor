@@ -266,7 +266,7 @@ class BaslerCamera(BaseCamera):
         self.trigger_camera()  # Triggers the camera only once
 
     def stop_free_run(self):
-        self._stop_free_run.set()
+        self._driver.StopGrabbing()
 
     def stop_camera(self):
         self._driver.StopGrabbing()
