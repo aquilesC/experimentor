@@ -264,7 +264,6 @@ class CameraViewerWidget(DataViewWidget):
         """ Instantiate the viewer using connect_to_camera in order to get some functionality out of the box. It will
         create a timer to automatically update the image
         """
-
         instance = cls(parent=parent)
         instance.timer = QTimer()
         instance.timer.timeout.connect(lambda: instance.update_image(camera.temp_image))
