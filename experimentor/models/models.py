@@ -75,8 +75,39 @@ class BaseModel(metaclass=MetaModel):
         return url.rsplit(":")[-1]
 
     def emit(self, signal_name, payload, **kwargs):
+        """ Emits a signal using the publisher bound to the model. It uses the method :func:`BaseModel.get_publisher` to
+        get the publisher to use. You can override that method in order to use a different publisher (for example, an
+        experiment-based publisher instead of a model-based one.
+
+        Notes
+        -----
+            If subscribers are too slow, a queue will build up on the publisher, which may lead to the model itself
+            crashing. It is important to be sure subscribers can keep up.
+
+        Parameters
+        ----------
+        signal_name : str
+            The name of the signal is used as a topic for the publisher. Remember that in PyZMQ, topics are filtered on
+            the subscriber side, therefore everything is always broadcasted broadly, which can be a bottleneck for
+            performance in case there are many subscribers.
+        payload
+            It will be sent by the publisher. In case it is a ``numpy`` array, it will use a zero-copy strategy. For the
+            rest, it will send using ``send_pyobj``, which serializes the payload using pickle. This can be a *slow*
+            process for complex objects.
+        kwargs
+            Optional keyword arguments to make the method future-proof. Rigth now, the only supported keyword argument
+            is ``meta``, which will append to the current meta_data being broadcast. For numpy arrays, metadata is a
+            dictionary with the following keys: ``numpy``, ``dtype``, ``shape``. For non-numpy objects, the only key is
+            ``numpy``. The submitted metadata is appended to the internal metadata, therefore be careful not to
+            overwrite its keys unless you know what you are doing.
+        """
         publisher = self.get_publisher()
         publisher.send_string(signal_name, zmq.SNDMORE)
+        if 'meta' in kwargs:
+            extra_meta = kwargs.get('meta')
+        else:
+            extra_meta = None
+
         meta_data = dict(numpy=False)
         if isinstance(payload, np.ndarray):
             meta_data = dict(
@@ -84,9 +115,13 @@ class BaseModel(metaclass=MetaModel):
                 dtype=str(payload.dtype),
                 shape=payload.shape,
             )
+            if extra_meta is not None:
+                meta_data.update(extra_meta)
             publisher.send_json(meta_data, 0 | zmq.SNDMORE)
             publisher.send(payload, 0, copy=True, track=False)
         else:
+            if extra_meta is not None:
+                meta_data.update(extra_meta)
             publisher.send_json(meta_data, 0 | zmq.SNDMORE)
             publisher.send_pyobj(payload)
 
