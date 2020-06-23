@@ -1,3 +1,4 @@
+import numpy as np
 import time
 from threading import Event
 
@@ -225,6 +226,12 @@ class BaslerCamera(BaseCamera):
             self._driver.StartGrabbing(pylon.GrabStrategy_LatestImages)
         else:
             raise CameraException('Unknown acquisition mode')
+
+        if self.pixel_format == 'Mono8':
+            self.current_dtype = np.uint8
+        elif self.pixel_format == 'Mono12':
+            self.current_dtype = np.uint16
+
         self._driver.ExecuteSoftwareTrigger()
         self.logger.info('Executed Software Trigger')
 
@@ -246,11 +253,11 @@ class BaslerCamera(BaseCamera):
                 raise WrongCameraState('You need to trigger the camera before reading')
             num_buffers = self._driver.NumReadyBuffers.Value
             if num_buffers:
-                img = [None] * num_buffers
+                img = [np.zeros((self.width, self.height), dtype=self.current_dtype)] * num_buffers
                 for i in range(num_buffers):
                     grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_ThrowException)
                     if grab and grab.GrabSucceeded():
-                        img[i] = grab.GetArray().T
+                        img[i][:, :] = grab.GetArray().T
                         grab.Release()
                 img = [i for i in img if i is not None]
         if len(img) >= 1:
