@@ -12,8 +12,14 @@ publisher.bind('tcp://*:1234')
 
 i = 0
 while True:
-    cam.trigger_camera()
-    ans = cam.read_camera()
-    publisher.send_pyobj(ans)
-    i+=1
-    print(f'Sent {i} frames', end='\r')
+    try:
+        cam.trigger_camera()
+        ans = cam.read_camera()
+        publisher.send(ans, 0, copy=True, track=False)
+        i+=1
+        print(f'Sent {i} frames', end='\r')
+    except KeyboardInterrupt:
+        break
+
+cam.finalize()
+publisher.close()
