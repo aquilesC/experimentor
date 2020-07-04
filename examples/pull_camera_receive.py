@@ -2,7 +2,7 @@ import zmq
 
 ctx = zmq.Context()
 pull = ctx.socket(zmq.PULL)
-pull.bind('udp://192.168.0.100:1234')
+pull.bind('tcp://192.168.0.100:1234')
 
 
 i = 0

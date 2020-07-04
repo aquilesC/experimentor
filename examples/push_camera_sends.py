@@ -8,7 +8,7 @@ cam.initialize()
 
 context = zmq.Context()
 pusher = context.socket(zmq.PUSH)
-pusher.bind(f"udp://*:1234")
+pusher.bind(f"tcp://*:1234")
 
 i = 0
 while True:
