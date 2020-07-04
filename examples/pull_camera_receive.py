@@ -1,4 +1,4 @@
-from time import perf_counter
+from time import perf_counter, time
 
 import zmq
 
@@ -8,8 +8,8 @@ pull.connect('tcp://192.168.0.100:1234')
 
 
 i = 0
-t0 = perf_counter()
+t0 = time()
 while True:
     i += 1
     data = pull.recv(flags=0, copy=True, track=False)
-    print(f'Got {i} frames, {i/(perf_counter()-t0)} fps', end='\r')
+    print(f'Got {i} frames, {i/(time()-t0)} fps', end='\r')
