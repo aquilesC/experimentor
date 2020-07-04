@@ -10,6 +10,7 @@ cam = BaslerCamera('p')
 cam.initialize()
 
 cam.exposure = Q_('10ms')
+cam.ROI = ((300, 100), (300,100))
 
 context = zmq.Context()
 pusher = context.socket(zmq.PUSH)
