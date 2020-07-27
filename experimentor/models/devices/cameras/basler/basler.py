@@ -144,7 +144,6 @@ class BaslerCamera(BaseCamera):
 
     @auto_gain.setter
     def auto_gain(self, mode):
-
         modes = ('Off', 'Once', 'Continuous')
         if mode is False:
             mode = 'Off'
@@ -254,12 +253,16 @@ class BaslerCamera(BaseCamera):
             num_buffers = self._driver.NumReadyBuffers.Value
             if num_buffers:
                 img = [np.zeros((self.width, self.height), dtype=self.current_dtype)] * num_buffers
+                tot_frames = 0
                 for i in range(num_buffers):
                     grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_ThrowException)
                     if grab and grab.GrabSucceeded():
                         img[i][:, :] = grab.GetArray().T
                         grab.Release()
-                img = [i for i in img if i is not None]
+                        tot_frames += 1
+                    else:
+                        self.logger.warning(f'{self}: Grabbing failed')
+                img = img[:tot_frames]
         if len(img) >= 1:
             self.temp_image = img[-1]
         return img
