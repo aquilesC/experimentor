@@ -9,8 +9,7 @@ The documentation will cover from the basics of installation in a Python virtual
 
 Installing
 ----------
-
-The code of this program is the repository that can be found at ``https://github.com/uetke/experimentor``. You may also check the website ``https://uetke.com`` for some updates and comments that may not enter into this documentation.
+The code of this program is the repository that can be found at https://github.com/aquilesC/experimentor.
 
 If you need further assistance with the installation of the code, please check :ref:`installing`
 
