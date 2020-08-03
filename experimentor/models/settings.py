@@ -12,7 +12,6 @@
 from experimentor.models.exceptions import ModelException
 
 
-
 class Setting:
     """ Settings of models. It can be used as a decorator of methods in models. The settings will be stored in a
     dictionary owned by the model, and the values will be retrieved from there, unless explicitly told to update the

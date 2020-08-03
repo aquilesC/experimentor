@@ -1,4 +1,8 @@
-""" Every model in Experimentor has a set of properties that define their state. A camera has, for example, an exposure
+"""
+Properties
+==========
+
+Every model in Experimentor has a set of properties that define their state. A camera has, for example, an exposure
 time, a DAQ card has a delay between data points, and an Experiment holds global parameters, such as the number of
 repetitions a measurement should take.
 

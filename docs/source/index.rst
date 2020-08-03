@@ -21,3 +21,4 @@ If you need further assistance with the installation of the code, please check :
    python_working
    installing
    starting
+   experimentor
