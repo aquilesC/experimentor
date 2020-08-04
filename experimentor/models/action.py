@@ -95,27 +95,3 @@ class Action:
 
     def set_action(self, method):
         return type(self)(method, **self.kwargs)
-
-
-if __name__ == '__main__':
-    import time
-    from experimentor.models.models import BaseModel
-
-    class TestModel(BaseModel):
-        @Action
-        def initialize(self):
-            time.sleep(1)
-            print('Initializing')
-
-        @Action
-        def auto_calibrate(self):
-            time.sleep(1)
-            print('Auto Calibrating')
-
-
-    tm = TestModel()
-    tm.initialize()
-    print('Post_initialize')
-    tm.auto_calibrate()
-    print('Post calibrate')
-    print(tm.get_actions())
