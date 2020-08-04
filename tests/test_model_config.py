@@ -2,7 +2,7 @@ import unittest
 
 from experimentor.models.devices.base_device import ModelDevice
 from experimentor.models.exceptions import PropertyException
-from experimentor.models.features import Feature
+from experimentor.models.feature import Feature
 from experimentor.models.properties import Properties
 
 

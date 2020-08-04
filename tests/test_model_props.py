@@ -1,7 +1,7 @@
 import unittest
 
 from experimentor.models.devices.base_device import ModelDevice
-from experimentor.models.features import Feature
+from experimentor.models.feature import Feature
 
 
 class TestModelProps(unittest.TestCase):

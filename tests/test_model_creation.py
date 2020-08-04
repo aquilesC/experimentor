@@ -9,19 +9,14 @@ from experimentor.models.models import MetaModel, BaseModel
 
 
 class TestModelCreation(unittest.TestCase):
-    def test_error_class_definition(self):
-        with self.assertRaises(ModelDefinitionException):
-            class TestModel(metaclass=MetaModel):
-                _signals = []
-
     def test_signal_creation(self):
-        class TestModel(metaclass=MetaModel):
+        class TestModel(BaseModel):
             signal = Signal()
 
         self.assertTrue(hasattr(TestModel, '_signals'))
 
     def test_signals_model(self):
-        class TestModel(metaclass=MetaModel):
+        class TestModel(BaseModel):
             a1 = Signal()
             a2 = Signal()
 
@@ -65,14 +60,3 @@ class TestModelCreation(unittest.TestCase):
         self.assertEqual(len(tm._threads), 1)
         tm.clean_up_threads()
         self.assertEqual(len(tm._threads), 0)
-
-    def test_proxy_object(self):
-        class TestModel(BaseModel):
-            def initialize(self):
-                pass
-
-        tm = TestModel.as_process()
-        self.assertTrue(tm.child_process.is_alive())
-        tm.parent_pipe.send(None)
-        sleep(.1)
-        self.assertFalse(tm.child_process.is_alive())
