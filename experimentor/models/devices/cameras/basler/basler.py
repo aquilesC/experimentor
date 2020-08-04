@@ -7,6 +7,7 @@ from pypylon import pylon, _genicam
 from experimentor import Q_
 from experimentor.core.signal import Signal
 from experimentor.lib.log import get_logger
+from experimentor.models.action import Action
 from experimentor.models.decorators import make_async_thread
 from experimentor.models.devices.cameras.exceptions import WrongCameraState, CameraException
 from experimentor.models.devices.cameras.base_camera import BaseCamera
@@ -234,6 +235,7 @@ class BaslerCamera(BaseCamera):
         self._driver.ExecuteSoftwareTrigger()
         self.logger.info('Executed Software Trigger')
 
+    @Action
     def read_camera(self) -> list:
         img = []
         mode = self.acquisition_mode

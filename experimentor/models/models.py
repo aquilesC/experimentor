@@ -125,6 +125,26 @@ class BaseModel(metaclass=MetaModel):
             publisher.send_json(meta_data, 0 | zmq.SNDMORE)
             publisher.send_pyobj(payload)
 
+    @classmethod
+    def get_actions(cls):
+        """ Returns the list of actions stored in the model. In case this behavior needs to be extended, the method
+        can be overwritten in any child class.
+        """
+        return cls._actions
+
+    @classmethod
+    def set_actions(cls, actions):
+        """ Method to store actions in the model. It is a convenience method that can be overwritten by child classes.
+        """
+        cls._actions = actions
+
+    @classmethod
+    def get_features(cls):
+        """ Returns the dict-like features of the model. If this behavior needs to be extended, the method can be
+         overwritten by any child class.
+         """
+        return cls._features
+
     def clean_up_threads(self):
         """ Keep only the threads that are alive.
         """
