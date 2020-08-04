@@ -29,17 +29,45 @@ class TestModelProps(unittest.TestCase):
             def with_call(self):
                 return 2
 
+            @Feature(setting=True)
+            def setting(self):
+                return 3
+
             @with_call
             def with_call(self, val):
                 pass
 
         self.test_model = TestModel
 
-    def test_setting(self):
+    def test_set_param(self):
         tm = self.test_model()
         tm.param = 2
         tm.config.fetch_all()
         self.assertEqual(tm.param, tm.config['param'])
+
+    def test_is_setting(self):
+        tm = self.test_model()
+        self.assertTrue(hasattr(tm, '_settings'))
+        self.assertIn('setting', tm._settings)
+
+    def test_retrieve_setting(self):
+        tm = self.test_model()
+        self.assertEqual(tm.setting, 3)
+
+    def test_setting_force_update(self):
+        tm = self.test_model()
+        tm.setting = None
+        self.assertEqual(tm.setting, 3)
+
+    def test_read_only_raises_error(self):
+        tm = self.test_model()
+        with self.assertRaises(AttributeError):
+            tm.only_get = 4
+
+    def test_setting_read_only(self):
+        tm = self.test_model()
+        with self.assertRaises(AttributeError):
+            tm.setting = 2
 
     def test_to_update(self):
         tm = self.test_model()
