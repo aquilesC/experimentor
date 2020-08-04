@@ -1,3 +1,5 @@
+.. _starting:
+
 Starting to use the Experimentor
 ================================
 
