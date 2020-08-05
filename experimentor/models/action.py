@@ -34,7 +34,6 @@
 from concurrent.futures.thread import ThreadPoolExecutor
 
 import threading
-from experimentor.models.models import ExpList
 
 
 class Action:
@@ -42,10 +41,14 @@ class Action:
     associated with pressing of a button. Actions are multi-threaded by default, using a single executor that returns a
     future.
 
-    Actions themselves do not take arguments, the model should be set before triggering the action. In the same way,
-    they should not return any values. In case there is need to share data to and from actions, the best is to change
-    attributes in the model itself. Be aware that using the simple shared-memory approach to exchange information
-    between threads may give raise to some racing conditions in extreme situations.
+    Even though Actions (intended as the method in a model) can take arguments, it may be a better approach to store
+    the parameters as attributes before triggering an action. In this way, triggering an action would be equivalent to
+    pressing a button. In the same way, actions can store return values as attribute in the model itself, avoiding the
+    need to keep track of the future returned by the action. Be aware of potential racing conditions that may arise when
+    using shared memory to exchange information.
+
+    .. todo:: Define a clear protocol for exchanging information with models. Should it be state-based (i.e. storing
+        parameters as attributes in the class) or statement based (i.e. passing parameters as arguments of methods).
     """
     def __init__(self, method=None, **kwargs):
         self.method = method
@@ -70,11 +73,25 @@ class Action:
         if self.method is None and len(args) >= 1:
             return self.set_action(args[0])
 
-        def run(method, instance):
-            executor = self.get_executor()
-            return executor.submit(method, instance)
+        run = self.get_run()
+        return run(self.method, self.instance, *args, **kwargs)
 
-        return run(self.method, self.instance)
+    def get_run(self):
+        """ Generates the run function that will be applied to the method. It looks a big convoluted, but it is one of
+        the best approaches to make it easy to extend the Actions in the longer run. The return callable grabs the
+        executor from the method :func:`self.get_executor`.
+
+        Returns
+        -------
+        callable
+            A function that takes two arguments: method and instance and that submits them to an executor
+        """
+
+        def run(method, instance, *args, **kwargs):
+            executor = self.get_executor()
+            return executor.submit(method, instance, *args, **kwargs)
+
+        return run
 
     def get_executor(self):
         """ Gets the executor either explicitly defined as an argument when instantiating the Action, or grabs it from
