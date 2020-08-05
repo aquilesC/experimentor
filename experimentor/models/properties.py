@@ -89,7 +89,9 @@ class Properties:
 
     def update(self, values: dict):
         """Updates the values in the same way the update method of a dictionary works. It, however, stores the values
-        as a new value, it does not alter the values stored. For updating the proper values use :func:`self.upgrade`
+        as a new value, it does not alter the values stored. For updating the proper values use :func:`self.upgrade`.
+
+        After updating the values, use :func:`self.apply_all` to send the new values to the device.
         """
         for key, value in values.items():
             self.__setitem__(key, value)
