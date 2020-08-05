@@ -74,7 +74,7 @@ class BaseCamera(ModelDevice):
 
     camera = 'Base Camera Model'
 
-    def __init__(self, camera):
+    def __init__(self, camera, initial_config=None):
         super().__init__()
         self.logger = get_logger(__name__)
 
@@ -82,8 +82,14 @@ class BaseCamera(ModelDevice):
         self.running = False
         self.data_type = np.uint16
         self.temp_image = None
+        self.initial_config = initial_config
 
     def configure(self, properties: dict):
+        """ Configure the camera based on a dictionary of properties.
+
+        .. deprecated:: 0.3.0
+            By implementing features, this method is no longer required
+        """
         self.logger.info('Updating config')
         update_cam = False
         update_roi = False

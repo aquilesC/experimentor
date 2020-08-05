@@ -7,7 +7,7 @@ from pypylon import pylon, _genicam
 from experimentor import Q_
 from experimentor.core.signal import Signal
 from experimentor.lib.log import get_logger
-from experimentor.models.action import Action
+# from experimentor.models.action import Action
 from experimentor.models.decorators import make_async_thread
 from experimentor.models.devices.cameras.exceptions import WrongCameraState, CameraException
 from experimentor.models.devices.cameras.base_camera import BaseCamera
@@ -20,8 +20,8 @@ class BaslerCamera(BaseCamera):
     _acquisition_mode = BaseCamera.MODE_SINGLE_SHOT
     new_image = Signal()
 
-    def __init__(self, camera):
-        super().__init__(camera)
+    def __init__(self, camera, initial_config=None):
+        super().__init__(camera, initial_config=initial_config)
         self.logger = get_logger(__name__)
         self.friendly_name = ''
         self.free_run_running = False
@@ -61,6 +61,9 @@ class BaslerCamera(BaseCamera):
                                            pylon.Cleanup_Delete)
 
         self.config.fetch_all()
+        if self.initial_config is not None:
+            self.config.update(self.initial_config)
+            self.config.apply_all()
 
     @Feature()
     def exposure(self) -> Q_:
@@ -235,7 +238,7 @@ class BaslerCamera(BaseCamera):
         self._driver.ExecuteSoftwareTrigger()
         self.logger.info('Executed Software Trigger')
 
-    @Action
+    # @Action
     def read_camera(self) -> list:
         img = []
         mode = self.acquisition_mode
