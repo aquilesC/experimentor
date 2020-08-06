@@ -1,9 +1,8 @@
 Experimentor Reference
 ======================
 
-Contents:
-
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 1
 
     models/index
+    views/index

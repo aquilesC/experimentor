@@ -14,21 +14,21 @@
     Examples
     ---------
     A general purpose model can implement two methods: ``initialize`` and ``auto_calibrate``, we can use the Actions to
-    increment their usability:
+    increment their usability::
 
-    class TestModel:
-        @Action
-        def initialize(self):
-            print('Initializing')
+        class TestModel:
+            @Action
+            def initialize(self):
+                print('Initializing')
 
-        @Action
-        def auto_calibrate(self):
-            print('Auto Calibrating')
+            @Action
+            def auto_calibrate(self):
+                print('Auto Calibrating')
 
-    tm = TestModel()
-    tm.initialize()
-    tm.auto_calibrate()
-    print(tm.get_actions())
+        tm = TestModel()
+        tm.initialize()
+        tm.auto_calibrate()
+        print(tm.get_actions())
 
 """
 from concurrent.futures.thread import ThreadPoolExecutor

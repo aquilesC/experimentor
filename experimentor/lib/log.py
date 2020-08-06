@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-    nanoparticle_tracking.util.log.py
-    =================================
+    Logging Options
+    ===============
 
-    Adding log capacities to PyNTA
+    Standardizing logging options for experimentor.
 
 
-    :copyright:  Aquiles Carattino <aquiles@uetke.com>
-    :license: AGPLv3, see LICENSE for more details
+    :copyright:  Aquiles Carattino
+    :license: MIT, see LICENSE for more details
 """
 import logging
 import multiprocessing

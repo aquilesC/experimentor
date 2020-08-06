@@ -17,7 +17,7 @@
 
     .. TODO:: Check whether the serialization of objects with cPickle may be a bottleneck for performance.
 
-    :license: GPLv3, see LICENSE for more details
+    :license: MIT, see LICENSE for more details
 """
 import atexit
 import os

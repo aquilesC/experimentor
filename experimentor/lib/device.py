@@ -16,7 +16,7 @@
 
         Make flexible parameters when initializing the driver of the devices.
 
-    .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
+    .. sectionauthor:: Aquiles Carattino
 """
 import importlib
 import logging

@@ -17,7 +17,7 @@ setup(
     url='https://github.com/aquilesC/experimentor',
     license='MIT',
     author='Aquiles',
-    author_email='aquiles@uetke.com',
+    author_email='aquiles@pythonforthelab.com',
     description='Basic building blocks for controlling complex setups',
     install_requires=[
         'pint',

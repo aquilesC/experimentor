@@ -16,4 +16,4 @@ build
 dist
 output
 experimentor.egg-info
-docs/output
+docs/output/

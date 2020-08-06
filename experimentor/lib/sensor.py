@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-    sensor.py
-    =========
+    Sensor
+    ======
     Sensors are all the devices able to get a value from the experiment. For example a thermocouple is a sensor.
     The properties of the sensor are read-only; in principle one cannot change the port at which a specific sensor is plugged
     without re-generating the object.
 
-    .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
+    .. sectionauthor:: Aquiles Carattino
 """
 import logging
 

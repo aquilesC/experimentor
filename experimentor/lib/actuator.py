@@ -14,8 +14,6 @@
         ```
     Bear in mind that setting the value of an actuator triggers a communication with a real device. You have to be careful if
     there is something connected to it.
-
-    .. sectionauthor:: Aquiles Carattino <aquiles@uetke.com>
 """
 import logging
 

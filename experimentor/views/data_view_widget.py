@@ -9,7 +9,7 @@ class DataViewWidget(QWidget):
     """ Base class that defines some common patterns for views which are meant to display data.
 
     Attributes
-    -------
+    ----------
     default_Layout: By default, views will have a QHBoxLayout, it can be overriden when subclassing, or by changing the
         method get_layout
 
