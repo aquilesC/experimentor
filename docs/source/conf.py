@@ -23,6 +23,7 @@ dir = os.path.dirname(__file__)
 print(os.path.abspath('../../experimentor'))
 sys.path.insert(0, os.path.abspath('../../'))
 
+
 # -- General configuration ------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -35,7 +36,7 @@ sys.path.insert(0, os.path.abspath('../../'))
 extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 'sphinx.ext.coverage',
               'sphinx.ext.autosummary', 'sphinx.ext.napoleon']
 autosummary_generate = True
-
+autodoc_mock_imports = ["pypylon", "numpy", "pyqt", "pyqtgraph", "numpy", "pyzmq", "h5py"]
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
