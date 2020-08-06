@@ -1,9 +1,12 @@
 """
-MODELS
+Models
 ======
 Models are a buffer between user interactions and real devices. Models should define at least some basic common
 properties, for example how to read a value from a sensor and how to apply a value to an actuator.
 Models can also take care of manipulating data, for example calculating an FFT and returning it to the user.
+
+:license: MIT, see LICENSE for more details
+:copyright: 2020 Aquiles Carattino
 """
 import atexit
 import multiprocessing as mp
@@ -38,6 +41,10 @@ class BaseModel(metaclass=MetaModel):
     _settings : ExpDict
         Dictionary-like object where the settings are stored. This dictionary is also used to retrieve the latest known
         value of the setting.
+    _signals: ExpDict
+        Dictionary-like object to store the signals of the model
+    _subscribers: ExpDict
+        Dictionary-like object storing the subscribers to different signals arising from this model
     """
     _features = ExpDict()
     _actions = ExpList()
@@ -52,12 +59,33 @@ class BaseModel(metaclass=MetaModel):
         self._publisher = self.create_publisher()
 
     def create_context(self):
+        """ Creates the ZMQ context. In case of wanting to use a specific context (perhaps globally defined), overwrite
+        this method in the child classes. This method is called during the model instantiation.
+        """
         return zmq.Context()
 
     def get_context(self):
+        """ Gets the context. By default it is stored as a 'private' attribute of the model. Overwrite this method in
+        child classes if there is need to extend functionality.
+
+        Returns
+        -------
+        zmq.Context :
+            The context created with :func:`self.create_context`
+        """
         return self._ctx
 
     def create_publisher(self):
+        """ Creates a ZMQ publisher. It will be used by signals to broadcast their information. There is a delay before
+        returning the publisher to guarantee that it was properly initialized before actually using it.
+
+        Returns
+        -------
+        zmq.Publisher :
+            Returns the initialized publisher
+
+        .. todo:: This method has a high chance of being converted to an Action in order to let it run in parallel
+        """
         ctx = self.get_context()
         publisher = ctx.socket(zmq.PUB)
         publisher.bind('tcp://*:*')
@@ -65,12 +93,29 @@ class BaseModel(metaclass=MetaModel):
         return publisher
 
     def get_publisher(self):
+        """ Returns the publisher stored as a private attribute, and initialized during instantiation of the model.
+        Consider overwriting it in order to extend functionality.
+        """
         return self._publisher
 
     def get_publisher_url(self):
+        """ Each publisher can run on a different computer. This method should return the URL in which to connect to the
+        publisher.
+
+        .. todo:: Right now it only returns localhost, this MUST be improved
+        """
         return 'tcp://localhost'
 
     def get_publisher_port(self):
+        """ ZMQ allows to create publishers that bind to an available port without specifying which one. This
+        flexibility means that we should check to which port the publisher was bound if we want to use it. See
+        :func:`self.create_publisher` for more details.
+
+        Returns
+        -------
+        str :
+            The port to which the publisher is bound. A string of integers
+        """
         url = self.get_publisher().getsockopt(zmq.LAST_ENDPOINT).decode()
         return url.rsplit(":")[-1]
 
@@ -156,6 +201,10 @@ class BaseModel(metaclass=MetaModel):
 
     @classmethod
     def as_process(cls, *args, **kwargs):
+        """ Instantiate the model as a :class:`ProxyObject` that will run on a separate process.
+
+        .. warning:: This is WORK IN PROGRESS and will remain so for the foreseeable future.
+        """
         return ProxyObject(cls, *args, **kwargs)
 
     @abstractmethod
@@ -163,10 +212,20 @@ class BaseModel(metaclass=MetaModel):
         pass
 
     def finalize(self):
+        """ Finalizes the model. It only takes care of closing the publisher. Child classes should implement their own
+        finalize methods (they get called automatically), and either close the publisher explicitly or use this method.
+        """
         self._publisher.close()
 
 
 class ProxyObject:
+    """Creates an object that can run on a separate process. It uses pipes to exchange information in and out. This is
+    experimental and not meant to be used in a real application. It is here as a way of documenting one of the possible
+    directions.
+
+    .. note:: Right now we are using the multiprocessing pipes to exchange information, it would be useful to use the
+        zmq options in order to have a consistent interface through the project.
+    """
     def __init__(self, cls, *args, **kwargs):
         self.parent_pipe, child_pipe = mp.Pipe()
         if args:
@@ -181,6 +240,9 @@ class ProxyObject:
 
 
 def _create_process_loop(cls, command_pipe, *args, **kwargs):
+    """ Wrapper function that creates a loop in which the object runs. Without an infinite loop, the Process would just
+    finish and there wouldn't be communication possible with the core object.
+    """
     if args:
         if kwargs:
             obj = cls(args, kwargs)

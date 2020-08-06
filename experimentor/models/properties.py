@@ -28,6 +28,9 @@ Future Roadmap
 --------------
 We can consider forcing methods to always act on properties defined as new/known/old in order to use that information as
 a form of cache and validation strategy.
+
+:license: MIT, see LICENSE for more details
+:copyright: 2020 Aquiles Carattino
 """
 import warnings
 from typing import List

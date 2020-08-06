@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-    base_experiment.py
-    ==================
+    Base Experiment Model
+    =====================
     Base class for the experiments. ``BaseExperiment`` defines the common patterns that every experiment should have.
     Importantly, it starts an independent process called publisher, that will be responsible for broadcasting messages
     that are appended to a queue. The messages rely on the pyZMQ library and should be tested further in order to
@@ -18,6 +18,7 @@
     .. TODO:: Check whether the serialization of objects with cPickle may be a bottleneck for performance.
 
     :license: MIT, see LICENSE for more details
+    :copyright: 2020 Aquiles Carattino
 """
 import atexit
 import os

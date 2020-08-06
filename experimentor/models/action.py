@@ -30,6 +30,8 @@
         tm.auto_calibrate()
         print(tm.get_actions())
 
+    :license: MIT, see LICENSE for more details
+    :copyright: 2020 Aquiles Carattino
 """
 from concurrent.futures.thread import ThreadPoolExecutor
 
@@ -111,4 +113,17 @@ class Action:
         return self.kwargs.get('lock', self.instance._actions.lock)
 
     def set_action(self, method):
+        """ Wrapper that returns this own class but initializes it with a method and a previously stored dict of kwargs.
+        This method is what happens when the Action itself is defined with arguments.
+
+        Parameters
+        ----------
+        method: callable
+            The method that is decorated by the Action
+
+        Returns
+        -------
+        Action
+            Returns an instance of the Action using the previously stored kwargs but adding the method
+        """
         return type(self)(method, **self.kwargs)

@@ -28,12 +28,26 @@
 
     .. TODO:: A useful pattern is to catch the exception raised by the controllers if a value is out of range, or with
         the wrong units.
+
+    :license: MIT, see LICENSE for more details
+    :copyright: 2020 Aquiles Carattino
 """
 
 
 class Feature:
-    """Properties that belong to models. It makes easier the setting and getting of attributes, while at the same
-    time it keeps track of the properties of each model.
+    """ Properties that belong to models. It makes easier the setting and getting of attributes, while at the same
+    time it keeps track of the properties of each model. A Feature is, fundamentally, a descriptor, that extends some
+    functionality by accepting keyword arguments when defining.
+
+    .. todo:: There is a lot of functionality that can be implemented, but that hasn't yet, such as checking limits,
+        unit conversion, etc.
+
+    Attributes
+    ----------
+    name : str
+        The name of the feature, it must be unique since it will be used as a key in a dictionary.
+    kwargs : dict
+        If the feature is initialized with arguments, they will be stored here. Only keyword arguments are allowed.
     """
 
     name = ''

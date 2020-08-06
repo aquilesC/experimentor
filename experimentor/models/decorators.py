@@ -1,3 +1,11 @@
+"""
+Decorators
+==========
+Useful decorators for models.
+
+:license: MIT, see LICENSE for more details
+:copyright: 2020 Aquiles Carattino
+"""
 from functools import wraps
 from threading import Thread
 
@@ -6,6 +14,9 @@ from experimentor.models.models import BaseModel
 
 
 def not_implemented(func):
+    """ Raises a warning in the logger in case the method was not implemented by child classes, but it does not prevent
+    the program from running.
+    """
     @wraps(func)
     def func_wrapper(cls, *args, **kwargs):
         logger = get_logger(__name__)

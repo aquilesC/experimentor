@@ -1,3 +1,10 @@
+"""
+Meta Models
+===========
+
+:license: MIT, see LICENSE for more details
+:copyright: 2020 Aquiles Carattino
+"""
 import weakref
 
 from experimentor.core.exceptions import ModelDefinitionException
