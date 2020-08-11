@@ -8,6 +8,7 @@ from experimentor import Q_
 from experimentor.core.signal import Signal
 from experimentor.lib.log import get_logger
 # from experimentor.models.action import Action
+from experimentor.models.action import Action
 from experimentor.models.decorators import make_async_thread
 from experimentor.models.devices.cameras.exceptions import WrongCameraState, CameraException
 from experimentor.models.devices.cameras.base_camera import BaseCamera
@@ -28,7 +29,10 @@ class BaslerCamera(BaseCamera):
         self._stop_free_run = Event()
         self.fps = 0
         self.keep_reading = False
+        self.continuous_reads_running = False
+        self.finalized = False
 
+    @Action
     def initialize(self):
         """ Initializes the communication with the camera. Get's the maximum and minimum width. It also forces
         the camera to work on Software Trigger.
@@ -274,6 +278,7 @@ class BaslerCamera(BaseCamera):
 
     @make_async_thread
     def continuous_reads(self):
+        self.continuous_reads_running = True
         self.keep_reading = True
         while self.keep_reading:
             imgs = self.read_camera()
@@ -281,6 +286,7 @@ class BaslerCamera(BaseCamera):
                 for img in imgs:
                     self.new_image.emit(img)
             time.sleep(self.exposure.m_as('s'))
+        self.continuous_reads_running = False
 
     def start_free_run(self):
         """ Starts a free run from the camera. It will preserve only the latest image. It depends
@@ -300,19 +306,30 @@ class BaslerCamera(BaseCamera):
     def frame_rate(self):
         return float(self._driver.ResultingFrameRate.Value)
 
+    @Action
     def stop_free_run(self):
         self._driver.StopGrabbing()
         self.free_run_running = False
 
+    @Action
     def stop_camera(self):
         self._driver.StopGrabbing()
 
     def finalize(self):
+        if self.finalized:
+            return
+
+        self.keep_reading = False
         self.stop_free_run()
         self.stop_camera()
-        self.clean_up_threads()
-        super().finalize()
+        while self.continuous_reads_running:
+            time.sleep(.1)
 
+        self.clean_up_threads()
+        if len(self._threads) > 1:
+            self.logger.warning(f'Finalizing {self} but there are still threads running')
+        super().finalize()
+        self.finalized = True
 
 
 if __name__ == '__main__':
