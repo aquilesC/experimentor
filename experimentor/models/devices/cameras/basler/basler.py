@@ -288,6 +288,11 @@ class BaslerCamera(BaseCamera):
             time.sleep(self.exposure.m_as('s'))
         self.continuous_reads_running = False
 
+    def stop_continuous_reads(self):
+        self.keep_reading = False
+        while self.continuous_reads_running:
+            time.sleep(.1)
+
     def start_free_run(self):
         """ Starts a free run from the camera. It will preserve only the latest image. It depends
         on how quickly the experiment reads from the camera whether all the images will be available
