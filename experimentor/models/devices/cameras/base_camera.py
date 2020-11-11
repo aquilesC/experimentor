@@ -83,6 +83,8 @@ class BaseCamera(ModelDevice):
         self.data_type = np.uint16
         self.temp_image = None
         self.initial_config = initial_config
+        # self.width = 0  # Current width (considering ROI)
+        # self.height = 0  # Current height (considering ROI)
 
     def configure(self, properties: dict):
         """ Configure the camera based on a dictionary of properties.

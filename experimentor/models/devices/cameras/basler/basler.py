@@ -146,6 +146,30 @@ class BaslerCamera(BaseCamera):
         self._driver.ExposureAuto.SetValue(mode)
 
     @Feature()
+    def binning_y(self):
+        self.logger.debug('Retrieving binningY')
+        return self._driver.BinningVertical.Value
+
+    @binning_y.setter
+    def binning_y(self, value):
+        if value not in range(1, 5):
+            raise CameraException('BinningY must be one of (1, 2, 3, 4) pixels')
+        self.logger.info(f'Setting BinningY to {value}')
+        self._driver.BinningVertical.SetValue(value)
+
+    @Feature()
+    def binning_x(self):
+        self.logger.debug('Retrieving binningX')
+        return self._driver.BinningVertical.Value
+
+    @binning_x.setter
+    def binning_x(self, value):
+        if value not in range(1, 5):
+            raise CameraException('BinningX must be one of (1, 2, 3, 4) pixels')
+        self.logger.info(f'Setting BinningX to {value}')
+        self._driver.BinningHorizontal.SetValue(value)
+
+    @Feature()
     def auto_gain(self):
         """ Auto Gain must be one of three values: Off, Once, Continuous"""
         return self._driver.GainAuto.Value
@@ -170,6 +194,14 @@ class BaslerCamera(BaseCamera):
     def pixel_format(self, mode):
         self.logger.info(f'Setting pixel format to {mode}')
         self._driver.PixelFormat.SetValue(mode)
+
+    @Feature()
+    def width(self):
+        return self._driver.Width.Value
+
+    @Feature()
+    def height(self):
+        return self._driver.Height.Value
 
     @Feature()
     def ROI(self):
@@ -202,8 +234,6 @@ class BaslerCamera(BaseCamera):
         self._driver.OffsetY.SetValue(y_pos)
         self.X = (x_pos, x_pos + width)
         self.Y = (y_pos, y_pos + height)
-        self.width = self._driver.Width.Value
-        self.height = self._driver.Height.Value
 
     @Feature()
     def ccd_height(self):
