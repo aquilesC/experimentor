@@ -14,12 +14,9 @@
 
 from multiprocessing import Event
 
-PUBLISHER_PUBLISH_PORT = 5556
-PUBLISHER_PULL_PORT = 5557
-
 EXPERIMENT_MODEL = 'experimentor.models.experiments.Experiment'
 EXPERIMENT_MODEL_INIT = None
-# {
+# EXPERIMENT_MODEL_INIT = {
 #     'config_file': 'config.yml',
 # }
 

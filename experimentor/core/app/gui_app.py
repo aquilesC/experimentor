@@ -1,27 +1,30 @@
 import importlib
 import logging
+import sys
 from threading import Thread
 
+from PyQt5.QtWidgets import QApplication
+
 from experimentor.config import settings
-from experimentor.core import Publisher
 from experimentor.core.meta import ExperimentorProcess
-from experimentor.lib.log import get_logger, log_to_screen
+from experimentor.lib.log import get_logger,log_to_screen
 from experimentor.models.devices.base_device import ModelDevice
 from experimentor.models.experiments.base_experiment import BaseExperiment
 
 
-class ExperimentApp:
-    def __init__(self, ExperimentModel=None, initialize=True, gui=False, rehook_publisher=False, logger=logging.INFO):
+class ExperimentGuiApp:
+    def __init__(self,experiment_model=None, initialize=True, logger=logging.INFO):
         self.log = get_logger()
-        if logger:
-            handler = log_to_screen(logger=self.log,level=logger)
+        if logger is not None:
+            handler = log_to_screen(logger=self.log, level=logger)
         self.log.info(f'Experiment Model: {settings.EXPERIMENT_MODEL}')
-        if not ExperimentModel:
+        if experiment_model is not None:
             exp_model = settings.EXPERIMENT_MODEL.split('.')
             experiment_module = importlib.import_module('.'.join(exp_model[:-1]))
             experiment_model_class = getattr(experiment_module, exp_model[-1])
         else:
-            experiment_model_class = ExperimentModel
+            experiment_model_class = experiment_model
+
         if settings.EXPERIMENT_MODEL_INIT is not None:
             self.experiment_model = experiment_model_class(**settings.EXPERIMENT_MODEL_INIT)
         else:
@@ -30,24 +33,15 @@ class ExperimentApp:
         if initialize:
             self.experiment_model.initialize()
 
-        if not rehook_publisher:
-            self.publisher = Publisher(settings.GENERAL_STOP_EVENT)
-            self.publisher.start()
-
-        self.gui_thread = False
-        if gui:
-            self.gui_thread = Thread(target=start_gui, args=(self.experiment_model, ))
-            self.gui_thread.start()
+        self.gui_thread = Thread(target=start_gui, args=(self.experiment_model, ))
+        self.gui_thread.start()
 
     @property
     def is_running(self):
-        if self.gui_thread :
-            if self.gui_thread.is_alive():
-                return True
-            else:
-                return False
-        if self.experiment_model.is_alive:
+        if self.gui_thread.is_alive():
             return True
+        else:
+            return False
 
     def finalize(self):
         experiments = BaseExperiment.get_instances(recursive=True)
@@ -66,20 +60,15 @@ class ExperimentApp:
             except:
                 self.log.error(f'Couldn\'t finalize {dev}')
 
-        self.log.info('Stopping publisher')
-        self.publisher.stop()
-
         processes = ExperimentorProcess.get_instances(recursive=True)
         processes = [proc for proc in processes if proc.is_alive()]
         if len(processes):
             self.log.error('There are still {len(processes)} alive. They should have been stopped by now')
 
         self.log.info('Bye Bye!')
-
+        sys.exit()
 
 def start_gui(experiment_model):
-    from PyQt5.QtWidgets import QApplication
-
     gui_app = QApplication([])
 
     win_module = settings.START_WINDOW.split('.')

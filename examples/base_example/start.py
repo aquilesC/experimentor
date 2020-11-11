@@ -10,9 +10,9 @@ if __name__ == "__main__":
     this_dir = os.path.abspath(os.path.dirname(__file__))
     sys.path.append(this_dir)
 
-    from experimentor.core.app import ExperimentApp
+    from experimentor.core.app import ExperimentGuiApp
 
-    app = ExperimentApp(gui=False, logger=logging.DEBUG)
+    app = ExperimentGuiApp(experiment_model=ExperimentGuiApp,logger=logging.DEBUG)
     print('Created App')
     sleep(5)
     print('Emiting signal')
