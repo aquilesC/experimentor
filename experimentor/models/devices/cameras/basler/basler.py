@@ -222,8 +222,9 @@ class BaslerCamera(BaseCamera):
         self.logger.info(f'Updating ROI: (x, y, width, height) = ({x_pos}, {y_pos}, {width}, {height})')
         self._driver.OffsetX.SetValue(0)
         self._driver.OffsetY.SetValue(0)
-        self._driver.Width.SetValue(self.ccd_width)
-        self._driver.Height.SetValue(self.ccd_height)
+
+        self._driver.Width.SetValue(self._driver.WidthMax.GetValue())
+        self._driver.Height.SetValue((self._driver.HeightMax.GetValue()))
         self.logger.debug(f'Setting width to {width}')
         self._driver.Width.SetValue(width)
         self.logger.debug(f'Setting Height to {height}')
