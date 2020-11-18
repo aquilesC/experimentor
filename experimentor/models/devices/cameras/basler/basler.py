@@ -1,3 +1,5 @@
+from multiprocessing import Lock
+
 import numpy as np
 import time
 from threading import Event
@@ -20,6 +22,7 @@ from experimentor.models import Feature
 class BaslerCamera(BaseCamera):
     _acquisition_mode = BaseCamera.MODE_SINGLE_SHOT
     new_image = Signal()
+    _basler_lock = Lock()
 
     def __init__(self, camera, initial_config=None):
         super().__init__(camera, initial_config=initial_config)
@@ -124,6 +127,7 @@ class BaslerCamera(BaseCamera):
         if mode == self.MODE_CONTINUOUS:
             self.logger.debug(f'Setting buffer to {self._driver.MaxNumBuffer.Value}')
             self._acquisition_mode = mode
+
         elif mode == self.MODE_SINGLE_SHOT:
             self.logger.debug(f'Setting buffer to 1')
             self._acquisition_mode = mode
@@ -252,9 +256,10 @@ class BaslerCamera(BaseCamera):
     def trigger_camera(self):
         if self._driver.IsGrabbing():
             self.logger.warning('Triggering a grabbing camera')
-        self._driver.StopGrabbing()
+            self._driver.StopGrabbing()
         mode = self.acquisition_mode
         if mode == self.MODE_CONTINUOUS:
+            self._driver.OutputQueueSize = self._driver.MaxNumBuffer.Value
             self._driver.StartGrabbing(pylon.GrabStrategy_OneByOne)
             self.logger.info('Grab Strategy: One by One')
         elif mode == self.MODE_SINGLE_SHOT:
@@ -275,37 +280,51 @@ class BaslerCamera(BaseCamera):
 
     # @Action
     def read_camera(self) -> list:
-        img = []
-        mode = self.acquisition_mode
-        if mode == self.MODE_SINGLE_SHOT or mode == self.MODE_LAST:
-            self.logger.info(f'Grabbing mode: {mode}')
-            grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_Return)
-            if grab and grab.GrabSucceeded():
-                img = [grab.GetArray().T]
-                self.temp_image = img[0]
-                grab.Release()
-            if mode == self.MODE_SINGLE_SHOT:
-                self._driver.StopGrabbing()
+        with self._basler_lock:
+            img = []
+            mode = self.acquisition_mode
+            self.logger.debug(f'Grabbing mode: {mode}')
+            if mode == self.MODE_SINGLE_SHOT or mode == self.MODE_LAST:
+                grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_Return)
+                if grab and grab.GrabSucceeded():
+                    img = [grab.GetArray().T]
+                    self.temp_image = img[0]
+                    grab.Release()
+                if mode == self.MODE_SINGLE_SHOT:
+                    self._driver.StopGrabbing()
+                return img
+            else:
+                if not self._driver.IsGrabbing():
+                    raise WrongCameraState('You need to trigger the camera before reading')
+                num_buffers = self._driver.NumReadyBuffers.Value
+                if num_buffers > 0:
+                    if num_buffers > 0.9*self._driver.OutputQueueSize.Value:
+                        self.logger.warning(f'Buffer filled to 90% num buffers: {num_buffers}')
+                    img = [np.zeros((self.width, self.height), dtype=self.current_dtype)] * num_buffers
+                    tot_frames = 0
+                    for i in range(num_buffers):
+                        grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_ThrowException)
+                        if grab:
+                            if grab.GrabSucceeded():
+                                img[i] = grab.GetArray().T
+                                grab.Release()
+                                tot_frames += 1
+                            else:
+                                self.logger.warning(f'{self}: Grabbing failed {grab.ErrorDescription}')
+                        if i > 1:
+                            if np.all(img[i] == img[i-1]) and len(np.nonzero(img[i])[0]) > 0:
+                                self.logger.error(f'{self}: Duplicated frames grabbed from Basler')
+                        # else:
+                        #     if np.any(self.temp_image):
+                        #         if np.all(self.temp_image == img[i]):
+                        #             self.logger.error('Duplicated frame grabbed from Basler')
+                    if tot_frames != num_buffers:
+                        self.logger.warning(f'{self}: Number of buffers: {num_buffers} but number of frames read: {tot_frames}')
+                    img = img[:tot_frames]
+            if len(img) >= 1:
+                self.temp_image = img[-1]
+
             return img
-        else:
-            if not self._driver.IsGrabbing():
-                raise WrongCameraState('You need to trigger the camera before reading')
-            num_buffers = self._driver.NumReadyBuffers.Value
-            if num_buffers:
-                img = [np.zeros((self.width, self.height), dtype=self.current_dtype)] * num_buffers
-                tot_frames = 0
-                for i in range(num_buffers):
-                    grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_ThrowException)
-                    if grab and grab.GrabSucceeded():
-                        img[i][:, :] = grab.GetArray().T
-                        grab.Release()
-                        tot_frames += 1
-                    else:
-                        self.logger.warning(f'{self}: Grabbing failed')
-                img = img[:tot_frames]
-        if len(img) >= 1:
-            self.temp_image = img[-1]
-        return img
 
     @make_async_thread
     def continuous_reads(self):
@@ -316,7 +335,7 @@ class BaslerCamera(BaseCamera):
             if len(imgs) >= 1:
                 for img in imgs:
                     self.new_image.emit(img)
-            time.sleep(self.exposure.m_as('s'))
+            time.sleep(.001)
         self.continuous_reads_running = False
 
     def stop_continuous_reads(self):
