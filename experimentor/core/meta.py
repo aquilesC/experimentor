@@ -2,6 +2,8 @@ import weakref
 from multiprocessing.context import Process
 from threading import Thread
 
+from experimentor.lib.log import get_logger
+
 
 class MetaProcess(type):
     """ Meta Class that should be shared by all processes in order to be sure they all switch off nicely when done.
@@ -36,8 +38,12 @@ class MetaProcess(type):
 
 
 class ExperimentorProcess(Process, metaclass=MetaProcess):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(ExperimentorProcess, self).__init__()
+        self.logger = get_logger()
 
 
 class ExperimentorThread(Thread, metaclass=MetaProcess):
-    pass
+    def __init__(self, *args, **kwargs):
+        super(ExperimentorThread, self).__init__(args, kwargs)
+        self.logger = get_logger()
