@@ -1,3 +1,5 @@
+# noinspection SpellCheckingInspection
+
 from multiprocessing import Lock
 
 import numpy as np
@@ -9,13 +11,11 @@ from pypylon import pylon, _genicam
 from experimentor import Q_
 from experimentor.core.signal import Signal
 from experimentor.lib.log import get_logger
-# from experimentor.models.action import Action
 from experimentor.models.action import Action
 from experimentor.models.decorators import make_async_thread
 from experimentor.models.devices.cameras.exceptions import WrongCameraState, CameraException
 from experimentor.models.devices.cameras.base_camera import BaseCamera
 from experimentor.models.devices.cameras.exceptions import CameraNotFound
-# noinspection SpellCheckingInspection
 from experimentor.models import Feature
 
 
@@ -34,6 +34,18 @@ class BaslerCamera(BaseCamera):
         self.keep_reading = False
         self.continuous_reads_running = False
         self.finalized = False
+        self._buffer_size = None
+        self.current_dtype = None
+
+    @Feature()
+    def buffer_size(self):
+        return self._buffer_size
+
+    @buffer_size.setter
+    def buffer_size(self, value):
+        value = Q_(value)
+        self.logger.info(f'{self} - Setting buffer size to {value}')
+        self._buffer_size = value
 
     @Action
     def initialize(self):
@@ -198,6 +210,10 @@ class BaslerCamera(BaseCamera):
     def pixel_format(self, mode):
         self.logger.info(f'Setting pixel format to {mode}')
         self._driver.PixelFormat.SetValue(mode)
+        if self.pixel_format == 'Mono8':
+            self.current_dtype = np.uint8
+        elif self.pixel_format == 'Mono12' or self.pixel_format == 'Mono12p':
+            self.current_dtype = np.uint16
 
     @Feature()
     def width(self):
@@ -254,29 +270,48 @@ class BaslerCamera(BaseCamera):
         return super().__str__()
 
     def trigger_camera(self):
+        self.logger.info(f'Triggering {self} with mode: {self.acquisition_mode}')
         if self._driver.IsGrabbing():
             self.logger.warning('Triggering a grabbing camera')
             self._driver.StopGrabbing()
         mode = self.acquisition_mode
         if mode == self.MODE_CONTINUOUS:
+            self.logger.info(f'{self} - Triggering Continuous, {self.current_dtype}')#, frame: ({self.width},{self.height})')
+            # Calculate frame size in bytes
+            if self.current_dtype == np.uint8:
+                frame_size = self.width*self.height
+            elif self.current_dtype == np.uint16:
+                frame_size = self.width*self.height*2
+            else:
+                raise CameraException(f'{self} frame dtype is not known to allocate the buffer')
+
+            # Calculate the number of frames to be allocated based on the buffer size (in MB) and the frame size
+            # This is useful to keep into account that the frame can be cropped via the ROI or Binning.
+            self.logger.info(f'{self} - Frame size: {frame_size} bytes')
+            max_buffer_size = int(self.buffer_size.m_as('byte')/frame_size)
+            self.logger.info(f'{self} - Calculated max buffer {max_buffer_size}')
+
+            self._driver.MaxNumBuffer = max_buffer_size
             self._driver.OutputQueueSize = self._driver.MaxNumBuffer.Value
             self._driver.StartGrabbing(pylon.GrabStrategy_OneByOne)
             self.logger.info('Grab Strategy: One by One')
+            self.logger.info(f'Output Queue Size: {self._driver.MaxNumBuffer.Value}')
         elif mode == self.MODE_SINGLE_SHOT:
+            self._driver.MaxNumBuffer = 1
+            self._driver.OutputQueueSize = 1
             self._driver.StartGrabbing(pylon.GrabStrategy_LatestImageOnly)
             self.logger.info('Grab Strategy: Latest Image')
         elif mode == self.MODE_LAST:
+            self._driver.MaxNumBuffer = 10
+            self._driver.OutputQueueSize = self._driver.MaxNumBuffer.Value
             self._driver.StartGrabbing(pylon.GrabStrategy_LatestImages)
+            self.logger.info('Grab Strategy: Latest Images')
         else:
             raise CameraException('Unknown acquisition mode')
 
-        if self.pixel_format == 'Mono8':
-            self.current_dtype = np.uint8
-        elif self.pixel_format == 'Mono12':
-            self.current_dtype = np.uint16
-
         self._driver.ExecuteSoftwareTrigger()
         self.logger.info('Executed Software Trigger')
+        self.config.fetch_all()
 
     # @Action
     def read_camera(self) -> list:
@@ -299,7 +334,7 @@ class BaslerCamera(BaseCamera):
                 num_buffers = self._driver.NumReadyBuffers.Value
                 if num_buffers > 0:
                     if num_buffers > 0.9*self._driver.OutputQueueSize.Value:
-                        self.logger.warning(f'Buffer filled to 90% num buffers: {num_buffers}')
+                        self.logger.warning(f'{self} Buffer filled to 90% num buffers: {num_buffers}')
                     img = [np.zeros((self.width, self.height), dtype=self.current_dtype)] * num_buffers
                     tot_frames = 0
                     for i in range(num_buffers):
