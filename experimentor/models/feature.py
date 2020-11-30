@@ -6,10 +6,10 @@
     behavior, except for the absence of a cache. Features do communicate with the device when reading a value.
 
     For example, a feature could be the value of an analog input on a DAQ, or the temperature of a camera. They are
-    meant to be part of a measurement, for example their values can change in loops in order to make a scan. Features can
-    be used as decorators in pretty much the same way @propery can be used. The only difference is that they register in
-    the models properties object, so it is possible to update values either by submitting a value directly to the Feature
-    or by sending a dictionary to the properties and updating all at once.
+    meant to be part of a measurement, their values can change in loops in order to make a scan. Features can be used
+    as decorators in pretty much the same way @propery can be used. The only difference is that they register
+    themselves in the models properties object, so it is possible to update values either by submitting a value
+    directly to the Feature or by sending a dictionary to the properties and updating all at once.
 
     It is possible to mark a feature as a setting. In this case, the value will not be read from the device, but it will
     be cached. In case it is needed to refresh a value from the device, it is possible to use a specific argument, such
