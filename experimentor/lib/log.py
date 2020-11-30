@@ -12,7 +12,7 @@
 import logging
 import multiprocessing
 
-DEFAULT_FMT = "[%(levelname)8s] %(asctime)s %(name)s: %(message)s"
+DEFAULT_FMT = "[%(levelname)8s] %(asctime)s: %(message)s"
 
 
 def get_logger(name='experimentor', level=logging.DEBUG):
