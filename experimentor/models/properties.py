@@ -85,9 +85,10 @@ class Properties:
         """ Returns a dictionary with all the known values. """
         p = dict()
         for key, value in self._properties.items():
-            p.update({
-                key: value['value'],
-            })
+            if key:
+                p.update({
+                    key: value['value'],
+                })
         return p
 
     def update(self, values: dict):
@@ -284,6 +285,7 @@ class Properties:
         props = cls(parent, **parameters)
         props.link(links)
         return props
+
 
     def __repr__(self):
         return repr(self.all())
