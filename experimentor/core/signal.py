@@ -5,7 +5,7 @@ logger = get_logger(__name__)
 
 
 class Signal:
-    """ Base signal which implements the common pattern for defining, emiting and connecting a signal
+    """ Base signal which implements the common pattern for defining, emitting and connecting a signal
     """
     def __init__(self):
         self.name = None
