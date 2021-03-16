@@ -76,8 +76,8 @@ class BaslerCamera(BaseCamera):
 
         self.logger.info(f'Loaded camera {self._driver.GetDeviceInfo().GetModelName()}')
 
-        self._driver.RegisterConfiguration(pylon.SoftwareTriggerConfiguration(), pylon.RegistrationMode_ReplaceAll,
-                                           pylon.Cleanup_Delete)
+        # self._driver.RegisterConfiguration(pylon.SoftwareTriggerConfiguration(), pylon.RegistrationMode_ReplaceAll,
+        #                                    pylon.Cleanup_Delete)
 
         self.config.fetch_all()
         if self.initial_config is not None:
@@ -204,16 +204,26 @@ class BaslerCamera(BaseCamera):
     @Feature()
     def pixel_format(self):
         """ Pixel format must be one of Mono8, Mono12, Mono12p"""
-        return self._driver.PixelFormat.GetValue()
+        pixel_format = self._driver.PixelFormat.GetValue()
+        if pixel_format == 'Mono8':
+            self.current_dtype = np.uint8
+        elif pixel_format == 'Mono12' or pixel_format == 'Mono12p':
+            self.current_dtype = np.uint16
+        else:
+            self.logger.warning(f'Current pixel format is {pixel_format} while only Mono8, Mono12 and Mono12p are supported')
+        return pixel_format
 
     @pixel_format.setter
     def pixel_format(self, mode):
         self.logger.info(f'Setting pixel format to {mode}')
         self._driver.PixelFormat.SetValue(mode)
-        if self.pixel_format == 'Mono8':
+        if mode == 'Mono8':
             self.current_dtype = np.uint8
-        elif self.pixel_format == 'Mono12' or self.pixel_format == 'Mono12p':
+        elif mode == 'Mono12' or mode == 'Mono12p':
             self.current_dtype = np.uint16
+        else:
+            self.logger.warning(f'Trying to set pixel_format to {mode}, which is not valid')
+
 
     @Feature()
     def width(self):
@@ -309,7 +319,7 @@ class BaslerCamera(BaseCamera):
         else:
             raise CameraException('Unknown acquisition mode')
 
-        self._driver.ExecuteSoftwareTrigger()
+        # self._driver.ExecuteSoftwareTrigger()
         self.logger.info('Executed Software Trigger')
         self.config.fetch_all()
 
@@ -425,6 +435,8 @@ class BaslerCamera(BaseCamera):
 if __name__ == '__main__':
     cam = BaslerCamera('da')
     cam.initialize()
+    cam.exposure = Q_('100ms')
+    print(cam.exposure)
     print(cam.config)
     cam.config['roi'] = ((16, 1200-1), (16, 800-1))
     # print(cam.config.to_update())
