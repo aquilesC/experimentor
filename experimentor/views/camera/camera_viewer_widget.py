@@ -90,6 +90,8 @@ class CameraViewerWidget(DataViewWidget):
                 self.do_auto_range()
                 self.first_image = False
             self.last_image = image
+        else:
+            self.logger.debug(f'No new mage to update')
 
     def setup_roi_lines(self, max_size=None):
         """Sets up the ROI lines surrounding the image.
