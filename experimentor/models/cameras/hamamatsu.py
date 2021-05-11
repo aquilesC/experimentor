@@ -1,68 +1,65 @@
-# -*- coding: utf-8 -*-
 """
-    Hamamatsu Model
-    ===============
+    UUTrack.Model.Cameras.Hamamatsu.py
+    ==================================
 
     Model class for controlling Hamamatsu cameras via de DCAM-API. At the time of writing this class,
-    little documentation on the DCAM-API was available. Hamamatsu has a different time schedule regarding support of
+    little documentation on the DCAM-API was available. Hamamatsu has a different time schedule regardin support of
     their own API. However, Zhuang's lab Github repository had a python driver for the Orca camera and with a bit of
     tinkering things worked out.
 
     DCAM-API relies mostly on setting parameters into the camera. The correct data type of each parameter is not well
     documented; however it is possible to print all the available properties and work from there. The properties are
     stored in a filed named params.txt next to the :mod:`Hamamatsu Driver
-    <pynta.controller.devices.hamamatsu.hamamatsu_camera>`
+    <UUTrack.Controller.devices.hamamatsu.hamamatsu_camera>`
 
     .. note:: When setting the ROI, Hamamatsu only allows to set multiples of 4 for every setting (X,Y and vsize,
         hsize). This is checked in the function. Changing the ROI cannot be done directly, one first needs to disable it
         and then re-enable.
 
-    :copyright:  Aquiles Carattino <aquiles@uetke.com>
-    :license: GPLv3, see LICENSE for more details
+
+    .. sectionauthor:: Aquiles Carattino <aquiles@aquicarattino.com>
 """
 import numpy as np
 
-from experimentor.drivers.hamamatsu.hamamatsu_camera import HamamatsuCamera
-from .base_camera import BaseCamera
+from UUTrack.Controller.devices.hamamatsu.hamamatsu_camera import HamamatsuCamera
+from ._skeleton import cameraBase
 
 
-class Camera(BaseCamera):
+class camera(cameraBase):
     MODE_CONTINUOUS = 1
     MODE_SINGLE_SHOT = 0
     MODE_EXTERNAL = 2
 
-    def __init__(self, camera):
-        self.cam_id = camera # Monitor ID
+    def __init__(self,camera):
+        self.cam_id = camera # Camera ID
         self.camera = HamamatsuCamera(camera)
         self.running = False
         self.mode = self.MODE_SINGLE_SHOT
 
-    def initialize(self):
+    def initializeCamera(self):
         """ Initializes the camera.
 
         :return:
         """
-        self.camera.initCamera()
-        self.max_width = self.GetCCDWidth()
-        self.max_height = self.GetCCDHeight()
-        self.X = [0, self.max_width - 1]
-        self.Y = [0, self.max_height - 1]
 
-        # This is important to not have shufled patches of the CCD.
-        # Have to check documentation!!
+        self.camera.initCamera()
+        self.maxWidth = self.GetCCDWidth()
+        self.maxHeight = self.GetCCDHeight()
+        #This is important to not have shufled patches of the CCD.
+        #Have to check documentation!!
         self.camera.setPropertyValue("readout_speed", 1)
         self.camera.setPropertyValue("defect_correct_mode", 1)
 
-    def trigger_camera(self):
+    def triggerCamera(self):
         """Triggers the camera.
         """
-        if self.get_acquisition_mode() == self.MODE_CONTINUOUS:
+        if self.getAcquisitionMode() == self.MODE_CONTINUOUS:
             self.camera.startAcquisition()
-        elif self.get_acquisition_mode() == self.MODE_SINGLE_SHOT:
+        elif self.getAcquisitionMode() == self.MODE_SINGLE_SHOT:
             self.camera.startAcquisition()
             self.camera.stopAcquisition()
 
-    def set_acquisition_mode(self, mode):
+    def setAcquisitionMode(self, mode):
         """
         Set the readout mode of the camera: Single or continuous.
         Parameters
@@ -81,32 +78,32 @@ class Camera(BaseCamera):
         elif mode == self.MODE_EXTERNAL:
             #self.camera.setPropertyValue("trigger_source", 2)
             self.camera.settrigger(2)
-        return self.get_acquisition_mode()
+        return self.getAcquisitionMode()
 
-    def get_acquisition_mode(self):
+    def getAcquisitionMode(self):
         """Returns the acquisition mode, either continuous or single shot.
         """
         return self.mode
 
-    def acquisition_ready(self):
+    def acquisitionReady(self):
         """Checks if the acquisition in the camera is over.
         """
         return True
 
-    def set_exposure(self, exposure):
+    def setExposure(self,exposure):
         """
         Sets the exposure of the camera.
         """
         self.camera.setPropertyValue("exposure_time",exposure/1000)
-        return self.get_exposure()
+        return self.getExposure()
 
-    def get_exposure(self):
+    def getExposure(self):
         """
         Gets the exposure time of the camera.
         """
         return self.camera.getPropertyValue("exposure_time")[0]*1000
 
-    def read_camera(self):
+    def readCamera(self):
         """
         Reads the camera
         """
@@ -121,7 +118,7 @@ class Camera(BaseCamera):
 #        img = np.reshape(img,(dims[0],dims[1]))
         return img
 
-    def set_ROI(self, X, Y):
+    def setROI(self,X,Y):
         """
         Sets up the ROI. Not all cameras are 0-indexed, so this is an important
         place to define the proper ROI.
@@ -135,22 +132,21 @@ class Camera(BaseCamera):
         self.camera.setPropertyValue("subarray_hsize", self.camera.max_width)
         self.camera.setSubArrayMode()
 
-        X -= 1
-        Y -= 1
-
+        X-=1
+        Y-=1
         # Because of how Orca Flash 4 works, all the ROI parameters have to be multiple of 4.
-        hsize = round(abs(X[0]-X[1])/4)*4
-        hpos = round(X[0]/4)*4
-        vsize = round(abs(Y[0]-Y[1])/4)*4
-        vpos = round(Y[0]/4)*4
+        hsize = int(abs(X[0]-X[1])/4)*4
+        hpos = int(X[0]/4)*4
+        vsize = int(abs(Y[0]-Y[1])/4)*4
+        vpos = int(Y[0]/4)*4
         self.camera.setPropertyValue("subarray_vpos", vpos)
         self.camera.setPropertyValue("subarray_hpos", hpos)
         self.camera.setPropertyValue("subarray_vsize", vsize)
         self.camera.setPropertyValue("subarray_hsize", hsize)
         self.camera.setSubArrayMode()
-        return self.get_size()
+        return self.getSize()
 
-    def get_size(self):
+    def getSize(self):
         """Returns the size in pixels of the image being acquired. This is useful for checking the ROI settings.
         """
         X = self.camera.getPropertyValue("subarray_hsize")
@@ -181,7 +177,7 @@ class Camera(BaseCamera):
     def stopAcq(self):
         self.camera.stopAcquisition()
 
-    def stop_camera(self):
+    def stopCamera(self):
         """Stops the acquisition and closes the connection with the camera.
         """
         try:
@@ -190,5 +186,5 @@ class Camera(BaseCamera):
             self.camera.shutdown()
             return True
         except:
-            #Monitor failed to close
+            #Camera failed to close
             return False
