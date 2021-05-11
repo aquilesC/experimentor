@@ -74,24 +74,23 @@ class CameraViewerWidget(DataViewWidget):
         self.add_actions_to_menu()
         self.setup_mouse_tracking()
 
-
     def scene(self):
         """ Shortcut to getting the image scene"""
         return self.img.scene()
 
-    def update_image(self, image):
+    def update_image(self, image, auto_range=False, auto_histogram_range=False):
         """ Updates the image being displayed with some sensitive defaults, which can be over written if needed.
         """
         auto_levels = self.auto_levels_action.isChecked()
         self.logger.debug(f'Updating image with auto_levels: {auto_levels}')
         if image is not None:
-            self.imv.setImage(image, autoLevels=auto_levels, autoRange=False, autoHistogramRange=False)
+            self.imv.setImage(image, autoLevels=auto_levels, autoRange=auto_range, autoHistogramRange=auto_histogram_range)
             if self.first_image:
                 self.do_auto_range()
                 self.first_image = False
             self.last_image = image
         else:
-            self.logger.debug(f'No new mage to update')
+            self.logger.debug(f'No new image to update')
 
     def setup_roi_lines(self, max_size=None):
         """Sets up the ROI lines surrounding the image.
