@@ -36,6 +36,7 @@ class BaslerCamera(BaseCamera):
         self.finalized = False
         self._buffer_size = None
         self.current_dtype = None
+        self.last_timestamp = None
 
     @Feature()
     def buffer_size(self):
@@ -351,6 +352,15 @@ class BaslerCamera(BaseCamera):
                         grab = self._driver.RetrieveResult(int(self.exposure.m_as('ms')) + 100, pylon.TimeoutHandling_ThrowException)
                         if grab:
                             if grab.GrabSucceeded():
+                                if self.last_timestamp is None:
+                                    self.last_timestamp = int(grab.GetTimeStamp())
+                                else:
+                                    timestamp = int(grab.GetTimeStamp())
+                                    if (diff := timestamp - self.last_timestamp) > self.exposure.m_as('ps'):
+                                        n_frames = diff/self.exposure.m_as('ps')
+                                        self.logger.warning(f'{self} Missed at least {n_frames:.0f} frames')
+                                    self.last_timestamp = timestamp
+                                    self.logger.debug(f"Frame time: {diff}, timestamp: {self.last_timestamp}")
                                 img[i] = grab.GetArray().T
                                 grab.Release()
                                 tot_frames += 1
