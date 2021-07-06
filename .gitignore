@@ -17,3 +17,4 @@ dist
 output
 experimentor.egg-info
 docs/output/
+.DS_Store
