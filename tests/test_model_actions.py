@@ -26,7 +26,7 @@ class TestAction(unittest.TestCase):
 
     def test_action_list(self):
         tm = self.test_model()
-        self.assertEqual(len(tm.get_actions()), 2)
+        self.assertEqual(len(tm.get_actions()), 3)
         self.assertIn('simple_action', tm.get_actions())
         self.assertIn('another_simple_action', tm.get_actions())
 
