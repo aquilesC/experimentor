@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.com/aquilesC/experimentor.svg?branch=master)](https://travis-ci.com/aquilesC/experimentor) [![Documentation Status](https://readthedocs.org/projects/experimentor/badge/?version=latest)](https://experimentor.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/aquilesC/experimentor/branch/master/graph/badge.svg)](https://codecov.io/gh/aquilesC/experimentor)
+[![Build Status](https://travis-ci.com/aquilesC/experimentor.svg?branch=main)](https://travis-ci.com/aquilesC/experimentor)
+[![Documentation Status](https://readthedocs.org/projects/experimentor/badge/?version=latest)](https://experimentor.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/aquilesC/experimentor/branch/master/graph/badge.svg)](https://codecov.io/gh/aquilesC/experimentor)
 
 # Experimentor v0.2.0
 
