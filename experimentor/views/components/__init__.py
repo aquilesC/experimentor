@@ -5,3 +5,4 @@
 #  See LICENSE.MD for more information.                                        #
 # ##############################################################################
 
+from .file_selector import FileSelector

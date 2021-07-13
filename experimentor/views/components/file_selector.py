@@ -53,8 +53,8 @@ class FileSelector(QWidget):
         Once a file is selected, it updates the line with the path to the file.
 
         """
-        if (curr_path := self.path_line.text()) != '':
-            selected = QFileDialog.getOpenFileName(self, directory=curr_path)
+        if self.path != '':
+            selected = QFileDialog.getOpenFileName(self, directory=self.path)
         else:
             selected = QFileDialog.getOpenFileName(self)
 
@@ -64,11 +64,3 @@ class FileSelector(QWidget):
     @property
     def path(self):
         return self.path_line.text()
-
-if __name__ == '__main__':
-    from PyQt5.QtWidgets import QApplication
-
-    app = QApplication([])
-    widget = FileSelector()
-    widget.show()
-    app.exec()
