@@ -14,8 +14,9 @@ common for a Python developer.
 This driver is not aimed at being exhaustive but rather focused on the objectives at hand, namely using the analog
 acquisition synchronized via an external trigger (which can also be on the board itself).
 """
+import numpy as np
 import sys
-from ctypes import byref, c_bool, c_double, c_int, cdll, create_string_buffer
+from ctypes import byref, c_bool, c_byte, c_double, c_int, cdll, create_string_buffer
 
 from experimentor.drivers.exceptions import DriverException
 from experimentor.lib.log import get_logger
@@ -72,6 +73,77 @@ class AnalogDiscovery:
         dwf.FDwfAnalogOutCount(self.hdwf, byref(num_channels))
         return num_channels.value
 
+    def analog_in_reset(self):
+        dwf.FDwfAnalogInReset(self.hdwf)
+
+    def analog_in_configure(self, reconfigure=1, start=1):
+        dwf.FDwfAnalogInConfigure(self.hdwf, c_int(reconfigure), c_int(start))
+
+    def analog_in_status(self, read_data=0):
+        """ Checks the status of the acquisition
+
+        Parameters
+        ----------
+        read_data : int
+            0 or 1, to indicate whether data should be read from the device
+
+        Returns
+        -------
+        InstrumentState
+            The instrument state
+        """
+        state = c_byte()
+        dwf.FDwfAnalogInStatus(self.hdwf, c_int(read_data), byref(state))
+        return state.value
+
+    def analog_in_samples_left(self):
+        """
+            Retrieves the number of samples left in the acquisition.
+        Returns
+        -------
+        int
+            Number of samples remaining
+        """
+        samples = c_int()
+        dwf.FDwfAnalogInStatusSamplesLeft(self.hdwf, byref(samples))
+        return samples.value
+
+    def analog_in_samples_valid(self):
+        samples = c_int()
+        dwf.FDwfAnalogInStatusSamplesValid(self.hdwf, byref(samples))
+        return samples.value
+
+    def analog_in_status_index(self):
+        """
+        Retrieves the buffer write pointer which is needed in ScanScreen acquisition mode to display the scan bar.
+        Returns
+        -------
+        int
+            Variable to receive the position of the acquisition.
+        """
+        index = c_int()
+        dwf.FDwfAnalogInStatusIndexWrite(self.hdwf, byref(index))
+        return index.value
+
+    def analog_in_status_data(self, channel, samples, buffer=None):
+        """ Retrieves the acquired data samples from the specified idxChannel on the AnalogIn instrument. It copies the
+            data samples to the provided buffer.
+
+        Parameters
+        ----------
+        channel : int
+        samples : int
+        buffer : c_double array, optional
+
+        Returns
+        -------
+        Buffer perhaps
+        """
+        if buffer is None:
+            buffer = (c_double*samples)()
+        dwf.FDwfAnalogInStatusData(self.hdwf, c_int(channel), buffer, samples)
+        return np.array(buffer)
+
     def analog_in_frequency_set(self, frequency):
         dwf.FDwfAnalogInFrequencySet(self.hdwf, c_double(frequency))
 
@@ -99,8 +171,14 @@ class AnalogDiscovery:
     def analog_in_trigger_channel_set(self, channel):
         dwf.FDwfAnalogInTriggerChannelSet(self.hdwf, c_int(channel))
 
-    def analog_in_trigger_level(self, level):
+    def analog_in_trigger_level_set(self, level):
         dwf.FDwfAnalogInTriggerLevelSet(self.hdwf, c_double(level))
+
+    def analog_in_trigger_level_get(self):
+        level = c_double()
+        dwf.FDwfAnalogInTriggerLevelGet(self.hdwf, byref(level))
+        return level.value
 
     def analog_in_trigger_condition(self, condition):
         dwf.FDwfAnalogInTriggerConditionSet(self.hdwf, condition)
+
