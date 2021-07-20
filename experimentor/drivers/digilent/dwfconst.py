@@ -142,7 +142,7 @@ class EnumConfigInfo(BaseConst):
 
 
 # acquisition modes:
-class AcquisitionModes(BaseConst):
+class AcquisitionMode(BaseConst):
     acqmodeSingle = c_int(0)
     acqmodeScanShift = c_int(1)
     acqmodeScanScreen = c_int(2)
@@ -167,9 +167,9 @@ class AnalogInTriggerMode(BaseConst):
 
 # trigger slope:
 class TriggerSlope(BaseConst):
-    DwfTriggerSlopeRise = c_int(0)
-    DwfTriggerSlopeFall = c_int(1)
-    DwfTriggerSlopeEither = c_int(2)
+    TriggerSlopeRise = c_int(0)
+    TriggerSlopeFall = c_int(1)
+    TriggerSlopeEither = c_int(2)
 
 
 # trigger length condition
