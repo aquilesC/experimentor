@@ -1,0 +1,23 @@
+experimentor.drivers.digilent package
+=====================================
+
+Submodules
+----------
+
+Digilent
+--------
+
+.. automodule:: experimentor.drivers.digilent.AnalogDiscovery
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: experimentor.drivers.digilent
+   :members:
+   :undoc-members:
+   :show-inheritance:
+   :imported-members:

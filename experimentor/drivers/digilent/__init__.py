@@ -5,3 +5,5 @@
 #  See LICENSE.MD for more information.                                        #
 # ##############################################################################
 
+from .ad2 import AnalogDiscovery
+from dwfconst import *
