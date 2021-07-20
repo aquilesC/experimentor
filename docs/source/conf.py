@@ -37,7 +37,7 @@ extensions = ['sphinx.ext.todo', 'sphinx.ext.viewcode', 'sphinx.ext.autodoc', 's
               'sphinx.ext.autosummary', 'sphinx.ext.napoleon']
 
 autosummary_generate = True
-autodoc_mock_imports = ["pypylon", "numpy", "pyqt", "pyqtgraph", "numpy", "pyzmq", "h5py", "pyvisa"]
+autodoc_mock_imports = ["pypylon", "numpy", "pyqt", "pyqtgraph", "numpy", "pyzmq", "h5py", "pyvisa", "scipy"]
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

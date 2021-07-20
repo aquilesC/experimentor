@@ -8,3 +8,4 @@ PyYAML
 pyzmq
 h5py
 PyVISA
+scipy

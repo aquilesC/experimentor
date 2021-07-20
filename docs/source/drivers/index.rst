@@ -7,11 +7,4 @@ Drivers
 .. toctree::
     :maxdepth: 4
 
-    action
-    feature
-    properties
-    models
-    exceptions
-    meta
-    devices/index
-    experiments/index
+    digilent

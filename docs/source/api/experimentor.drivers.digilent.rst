@@ -7,7 +7,7 @@ Submodules
 Digilent
 --------
 
-.. automodule:: experimentor.drivers.digilent.AnalogDiscovery
+.. autoclass:: experimentor.drivers.digilent.AnalogDiscovery
    :members:
    :undoc-members:
    :show-inheritance:
