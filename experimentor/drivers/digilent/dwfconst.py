@@ -29,7 +29,7 @@ directly assess the values specified by Digilent, and they can also be instantia
 
 This makes it clear when printing and enables quick comparisons that are easy to interpret. Ideally, the methods that
 return parameters should return instantiated classes. And the methods that use parameters as arguments whould implement
-them. 
+them.
 """
 
 from ctypes import c_int, c_ubyte

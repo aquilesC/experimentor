@@ -6,4 +6,3 @@
 # ##############################################################################
 
 from .ad2 import AnalogDiscovery
-from dwfconst import *

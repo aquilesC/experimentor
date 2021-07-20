@@ -1,5 +1,5 @@
-import numpy as np
 from scipy import optimize
+import numpy as np
 
 
 def gaussian(height, center_x, center_y, width_x, width_y):
