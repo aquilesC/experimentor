@@ -28,8 +28,8 @@
 import os
 import sys
 dir = os.path.dirname(__file__)
-print(os.path.abspath('../experimentor'))
-sys.path.insert(0, os.path.abspath('../'))
+print(os.path.abspath('../../experimentor'))
+sys.path.insert(0, os.path.abspath('../../'))
 
 
 # -- General configuration ------------------------------------------------
