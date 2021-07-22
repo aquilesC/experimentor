@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
+# ##############################################################################
+#  Copyright (c) 2021 Aquiles Carattino, Dispertech B.V.                       #
+#  conf.py is part of Experimentor.                                            #
+#  This file is released under an MIT license.                                 #
+#  See LICENSE.MD for more information.                                        #
+# ##############################################################################
+
 #
 # Experimentor documentation build configuration file, created by
 # sphinx-quickstart on Fri Mar 31 13:48:19 2017.
@@ -20,8 +28,8 @@
 import os
 import sys
 dir = os.path.dirname(__file__)
-print(os.path.abspath('../../experimentor'))
-sys.path.insert(0, os.path.abspath('../../'))
+print(os.path.abspath('../experimentor'))
+sys.path.insert(0, os.path.abspath('../'))
 
 
 # -- General configuration ------------------------------------------------
