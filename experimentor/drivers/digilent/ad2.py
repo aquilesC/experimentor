@@ -15,12 +15,12 @@ This driver is not aimed at being exhaustive but rather focused on the objective
 acquisition synchronized via an external trigger (which can also be on the board itself).
 """
 import sys
-from ctypes import byref, c_bool, c_byte, c_double, c_int, cdll, create_string_buffer
+from ctypes import byref, c_bool, c_byte, c_double, c_int, c_ubyte, c_uint, cdll, create_string_buffer
 
 import numpy as np
 
 from experimentor.drivers.digilent.dwfconst import AcquisitionMode, AnalogAcquisitionFilter, AnalogInTriggerMode, \
-    InstrumentState, \
+    DigitalOutIdle, DigitalOutOutput, DigitalOutType, InstrumentState, \
     TriggerLength, TriggerSlope, TriggerSource
 from experimentor.drivers.exceptions import DriverException
 from experimentor.lib.log import get_logger
@@ -95,7 +95,7 @@ class AnalogDiscovery:
         InstrumentState
             The instrument state
         """
-        state = c_byte()
+        state = c_ubyte()
         dwf.FDwfAnalogInStatus(self.hdwf, c_int(read_data), byref(state))
         return InstrumentState(state)
 
@@ -728,3 +728,245 @@ class AnalogDiscovery:
         length = c_double()
         dwf.FDwfAnalogInTriggerHysteresisGet(self.hdwf, byref(length))
         return length.value
+
+    def digital_out_reset(self):
+        dwf.FDwfDigitalOutReset(self.hdwf)
+
+    def digital_out_configure(self, status):
+        dwf.FDwfDigitalOutConfigure(self.hdwf, c_int(status))
+
+    def digital_out_status(self):
+        status = c_ubyte()
+        dwf.FDwfDigitalOutStatus(self.hdwf, byref(status))
+        return InstrumentState(status)
+
+    def digital_out_internal_clock_info(self):
+        frequency = c_double()
+        dwf.FDwfDigitalOutInternalClockInfo(self.hdwf, byref(frequency))
+        return frequency.value
+
+    def digital_out_trigger_source_set(self, source):
+        dwf.FDwfDigitalOutTriggerSourceSet(self.hdwf, source._value)
+
+    def digital_out_trigger_source_get(self):
+        source = c_ubyte()
+        dwf.FDwfDigitalOutTriggerSourceGet(self.hdwf, byref(source))
+        return TriggerSource(source)
+
+    def digital_out_trigger_slope_set(self, slope):
+        dwf.FDwfDigitalOutTriggerSlopeSet(self.hdwf, slope._value)
+
+    def digital_out_trigger_slope_get(self):
+        slope = c_int()
+        dwf.FDwfDigitalOutTriggerSlopeGet(self.hdwf, byref(slope))
+        return TriggerSlope(slope)
+
+    def digital_out_run_info(self):
+        min_run_len = c_double()
+        max_run_len = c_double()
+        dwf.FDwfDigitalOutRunInfo(self.hdwf, byref(min_run_len), byref(max_run_len))
+        return min_run_len.value, max_run_len.value
+
+    def digital_out_run_set(self, run_len):
+        dwf.FDwfDigitalOutRunSet(self.hdwf, c_double(run_len))
+
+    def digital_out_run_get(self):
+        run_len = c_double()
+        dwf.FDwfDigitalOutRunGet(self.hdwf, byref(run_len))
+        return run_len.value
+
+    def digital_out_run_status(self):
+        """Reads the remaining run length. It returns data from the last :meth:`~digital_out_status` call."""
+        run_len = c_double()
+        dwf.FDwfDigitalOutRunStatus(self.hdwf, byref(run_len))
+        return run_len.value
+
+    def digital_out_wait_info(self):
+        """ Returns the supported wait length range in seconds. The wait length is how long the instrument waits
+        after being triggered to generate the signal. Default value is zero."""
+        min_wait_length = c_double()
+        max_wait_length = c_double()
+        dwf.FDwfDigitalOutWaitInfo(self.hdwf, byref(min_wait_length), byref(max_wait_length))
+        return min_wait_length.value, max_wait_length.value
+
+    def digital_out_wait_set(self, wait):
+        dwf.FDwfDigitalOutWaitSet(self.hdwf, c_double(wait))
+
+    def digital_out_wait_get(self):
+        wait = c_double()
+        dwf.FDwfDigitalOutWaitGet(self.hdwf, byref(wait))
+        return wait.value
+
+    def digital_out_repeat_info(self):
+        min_repeat = c_uint()
+        max_repeat = c_uint()
+        dwf.FDwfDigitalOutRepeatInfo(self.hdwf, byref(min_repeat), byref(max_repeat))
+        return min_repeat.value, max_repeat.value
+
+    def digital_out_repeat_set(self, repeat):
+        dwf.FDwfDigitalOutRepeatSet(self.hdwf, c_uint(repeat))
+
+    def digital_out_repeat_get(self):
+        repeat = c_uint()
+        dwf.FDwfDigitalOutRepeatGet(self.hdwf, byref(repeat))
+        return repeat.value
+
+    def digital_out_repeat_status(self):
+        repeat_counts = c_uint()
+        dwf.FDwfDigitalOutRepeatStatus(self.hdwf, byref(repeat_counts))
+        return repeat_counts.value
+
+    def digital_out_repeat_trigger_set(self, trigger):
+        """Sets the repeat trigger option. To include the trigger in wait-run repeat cycles, set fRepeatTrigger to
+        TRUE. It is disabled by default."""
+        dwf.FDwfDigitalOutRepeatTriggerSet(self.hdwf, c_int(trigger))
+
+    def digital_out_repeat_trigger_get(self):
+        trigger = c_int()
+        dwf.FDwfDigitalOutRepeatTriggerGet(self.hdwf, byref(trigger))
+        return trigger.value
+
+    def digital_out_count(self):
+        """Returns the number of Digital Out channels by the device specified by hdwf."""
+        count = c_int()
+        dwf.FDwfDigitalOutCount(self.hdwf, byref(count))
+        return count.value
+
+    def digital_out_enable_set(self, channel, enable):
+        dwf.FDwfDigitalOutEnableSet(self.hdwf, c_int(channel), c_int(enable))
+
+    def digital_out_enable_get(self, channel):
+        enable = c_int()
+        dwf.FDwfDigitalOutEnableGet(self.hdwf, c_int(channel), byref(enable))
+        return enable.value
+
+    def digital_out_output_info(self, channel):
+        """ Returns the supported output modes of the channel. They are returned (by reference) as a bit field. This
+        bit field can be parsed using the IsBitSet Macro. Individual bits are defined using the
+        :class:`~dwfconst.DigitalOutOutput`:
+
+            - DwfDigitalOutOutputPushPull: Default setting.
+            - DwfDigitalOutOutputOpenDrain: External pull needed.
+            - DwfDigitalOutOutputOpenSource: External pull needed.
+            - DwfDigitalOutOutputThreeState: Available with custom and random types.
+        """
+        out_output = c_int()
+        dwf.FDwfDigitalOutOutputInfo(self.hdwf, c_int(channel), byref(out_output))
+        return out_output.value
+
+    def digital_out_output_set(self, channel, output):
+        dwf.FDwfDigitalOutOutputSet(self.hdwf, c_int(channel), output._value)
+
+    def digital_out_output_get(self, channel):
+        output = c_int()
+        dwf.FDwfDigitalOutOutputGet(self.hdwf, c_int(channel), byref(output))
+        return DigitalOutOutput(output)
+
+    def digital_out_type_info(self, channel):
+        """ Returns the supported types of the channel. They are returned (by reference) as a bit field. This bit field
+        can be parsed using the IsBitSet Macro. Individual bits are defined using :class:`~dwfconst.DigitalOutType`:
+
+            - DwfDigitalOutTypePulse: Frequency = internal frequency/divider/(low + high counter).
+            - DwfDigitalOutTypeCustom: Sample rate = internal frequency / divider.
+            - DwfDigitalOutTypeRandom: Random update rate = internal frequency/divider/counter alternating between
+            low and high values.
+            - DwfDigitalOutTypeROM: ROM logic, the DIO input value is used as address for output value
+            - DwfDigitalOutTypePlay: Supported with Digital Discovery."""
+
+        info = c_int()
+        dwf.FDwfDigitalOutTypeInfo(self.hdwf, c_int(channel), byref(info))
+        return info.value
+
+    def digital_out_type_set(self, channel, out_type):
+        dwf.FDwfDigitalOutTypeSet(self.hdwf, c_int(channel), out_type._value)
+
+    def digital_out_type_get(self, channel):
+        out_type = c_int()
+        dwf.FDwfDigitalOutTypeGet(self.hdwf, c_int(channel), byref(out_type))
+        return DigitalOutType(out_type)
+
+    def digital_out_idle_info(self, channel):
+        """ Returns the supported idle output types of the channel. They are returned (by reference) as a bit field.
+        This bit field can be parsed using the IsBitSet Macro. Individual bits are defined using
+        :class:`~dwfconst.DigitalOutIdle` :
+
+            - DwfDigitalOutIdleInit: Output initial value.
+            - DwfDigitalOutIdleLow: Low level.
+            - DwfDigitalOutIdleHigh: High level.
+            - DwfDigitalOutIdleZet: Three state.
+        """
+        info = c_int()
+        dwf.FDwfDigitalOutIdleInfo(self.hdwf, c_int(channel), byref(info))
+        return info.value
+
+    def digital_out_idle_set(self, channel, idle):
+        dwf.FDwfDigitalOutIdleSet(self.hdwf, channel, idle._value)
+
+    def digital_out_idle_get(self, channel):
+        idle = c_int()
+        dwf.FDwfDigitalOutIdleGet(self.hdwf, c_int(channel), byref(idle))
+        return DigitalOutIdle(idle)
+
+    def digital_out_divider_info(self, channel):
+        min_div = c_uint()
+        max_div = c_uint()
+        dwf.FDwfDigitalOutDividerInfo(self.hdwf, c_int(channel), byref(min_div), byref(max_div))
+        return min_div.value, max_div.value
+
+    def digital_out_divider_init_set(self, channel, divider):
+        dwf.FDwfDigitalOutDividerInitSet(self.hdwf, c_int(channel), c_uint(divider))
+
+    def digital_out_divider_init_get(self, channel):
+        divider = c_uint()
+        dwf.FDwfDigitalOutDividerInitGet(self.hdwf, c_int(channel), byref(divider))
+        return divider.value
+
+    def digital_out_divider_set(self, channel, divider):
+        dwf.FDwfDigitalOutDividerSet(self.hdwf, c_int(channel), c_uint(divider))
+
+    def digital_out_divider_get(self, channel):
+        divider = c_uint()
+        dwf.FDwfDigitalOutDividerGet(self.hdwf, c_int(channel), byref(divider))
+        return divider.value
+
+    def digital_out_counter_info(self, channel):
+        min_count = c_uint()
+        max_count = c_uint()
+        dwf.FDwfDigitalOutCounterInfo(self.hdwf, byref(min_count), byref(max_count))
+        return min_count.value, max_count.value
+
+    def digital_out_counter_init_set(self, channel, start_high, divider):
+        """ Sets the initial state and counter value of the specified channel. """
+        dwf.FDwfDigitalOutCounterInitSet(self.hdwf, c_int(channel), c_int(start_high), c_uint(divider))
+
+    def digital_out_counter_init_get(self, channel):
+        start_high = c_int()
+        divider = c_uint()
+        dwf.FDwfDigitalOutCounterInitGet(self.hdwf, c_int(channel), byref(start_high), byref(divider))
+        return start_high.value, divider.value
+
+    def digital_out_counter_set(self, channel, low, high):
+        """ Sets the counter low and high values for the specified channel.. """
+        dwf.FDwfDigitalOutCounterSet(self.hdwf, c_int(channel), c_uint(low), c_uint(high))
+
+    def digital_out_counter_get(self, channel):
+        high = c_uint()
+        low = c_uint()
+        dwf.FDwfDigitalOutCounterGet(self.hdwf, c_int(channel), byref(high), byref(low))
+        return high.value, low.value
+
+    def digital_out_data_info(self, channel):
+        """Returns the maximum buffers size, the number of custom data bits."""
+        bits = c_uint()
+        dwf.FDwfDigitalOutDataInfo(self.hdwf, c_int(channel), byref(bits))
+        return bits.value
+
+    def digital_out_data_set(self, channel, data_array, num_bits):
+        dwf.FDwfDigitalOutDataSet(self.hdwf, c_int(channel), byref(data_array), c_uint(num_bits))
+
+    def digital_out_play_rate_set(self, rate):
+        dwf.FDwfDigitalOutPlayRateSet(self.hdwf, c_double(rate))
+
+    def digital_out_play_data_set(self, bits, bits_per_sample, count):
+        dwf.FDwfDigitalOutPlayRateSet(self.hdwf, byref(bits), c_uint(bits_per_sample), c_uint(count))
+        
