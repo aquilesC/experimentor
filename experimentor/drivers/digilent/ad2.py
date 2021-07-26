@@ -19,8 +19,9 @@ from ctypes import byref, c_bool, c_byte, c_double, c_int, c_ubyte, c_uint, cdll
 
 import numpy as np
 
-from experimentor.drivers.digilent.dwfconst import AcquisitionMode, AnalogAcquisitionFilter, AnalogInTriggerMode, \
-    DigitalOutIdle, DigitalOutOutput, DigitalOutType, InstrumentState, \
+from experimentor.drivers.digilent.dwfconst import AcquisitionMode, AnalogAcquisitionFilter, AnalogChannelNodeType, \
+    AnalogInTriggerMode, \
+    AnalogOutNode, AnalogOutSignalType, DigitalOutIdle, DigitalOutOutput, DigitalOutType, InstrumentState, \
     TriggerLength, TriggerSlope, TriggerSource
 from experimentor.drivers.exceptions import DriverException
 from experimentor.lib.log import get_logger
@@ -63,18 +64,6 @@ class AnalogDiscovery:
             szerr = create_string_buffer(512)
             dwf.FDwfGetLastErrorMsg(szerr)
             raise DriverException(str(szerr.value))
-
-    def analog_out_count(self):
-        """The number of analog output channels available on this board.
-
-        Returns
-        -------
-        int
-            The number of analog channels available
-        """
-        num_channels = c_int()
-        dwf.FDwfAnalogOutCount(self.hdwf, byref(num_channels))
-        return num_channels.value
 
     def analog_in_reset(self):
         dwf.FDwfAnalogInReset(self.hdwf)
@@ -969,4 +958,178 @@ class AnalogDiscovery:
 
     def digital_out_play_data_set(self, bits, bits_per_sample, count):
         dwf.FDwfDigitalOutPlayRateSet(self.hdwf, byref(bits), c_uint(bits_per_sample), c_uint(count))
-        
+
+    def analog_out_reset(self, channel):
+        dwf.FDwfAnalogOutReset(self.hdwf, c_int(channel))
+
+    def analog_out_configure(self, channel, f_start):
+        """ Starts or stops the instrument. Value 3 will apply the configuration dynamically without changing the
+        state of the instrument. With channel index -1, each enabled Analog Out channel will be configured.
+        Parameters
+        ----------
+        channel : int
+            if -1, applies to each enabled channel
+        f_start : int
+            0 - stop, 1 - start, 3 - apply (without changing the state of the instrument)
+        """
+        dwf.FDwfAnalogOutConfigure(self.hdwf, c_int(channel), c_int(f_start))
+
+    def analog_out_status(self, channel):
+        status = c_ubyte()
+        dwf.FDwfAnalogOutStatus(self.hdwf, c_int(channel), byref(status))
+        return InstrumentState(status)
+
+    def analog_out_play_status(self, channel, node):
+        """ Retrieves information about the play process. The data lost occurs when the device generator is faster
+        than the sample send process from the PC. In this case, the device buffer gets emptied and generated samples
+        are repeated. Corrupt samples are a warning that the buffer might have been emptied while samples were sent
+        to the device. In this case, try optimizing the loop for faster execution; or reduce the frequency or run
+        time to be less or equal to the device buffer size (run time <= buffer size/frequency).
+
+        Parameters
+        ----------
+        channel : int
+        node : int
+
+        Returns
+        -------
+        data_free : int
+        data_lost : int
+        data_corrupted : int
+        """
+        data_free = c_int()
+        data_lost = c_int()
+        data_corrupted = c_int()
+
+        dwf.FDwfAnalogOutNodePlayStatus(self.hdwf, c_int(channel), c_int(node), byref(data_free), byref(data_lost),
+                                        byref(data_corrupted))
+        return data_free.value, data_lost.value, data_corrupted.value
+
+    def analog_out_play_data(self, channel, node):
+        """
+        TODO: I do not understand this method, and it is not properly implemented. More work is required.
+        Parameters
+        ----------
+        channel
+        node
+
+        Returns
+        -------
+
+        """
+        data = c_double()
+        number_data = c_int()
+
+        dwf.FDwfAnalogOutNodePlayData(self.hdwf, c_int(channel), c_int(node), byref(data), byref(number_data))
+
+    def analog_out_count(self):
+        """The number of analog output channels available on this board.
+
+        Returns
+        -------
+        int
+            The number of analog channels available
+        """
+        num_channels = c_int()
+        dwf.FDwfAnalogOutCount(self.hdwf, byref(num_channels))
+        return num_channels.value
+
+    def analog_out_node_info(self, channel):
+        """ Returns the supported AnalogOut nodes of the AnalogOut channel. They are returned (by reference)
+            as a bit field. This bit field can be parsed using the IsBitSet Macro.
+
+        Parameters
+        ----------
+        channel
+
+        Returns
+        -------
+        int
+        """
+        node = c_int()
+        dwf.FDwfAnalogOutNodeInfo(self.hdwf, c_int(channel), byref(node))
+        return node.value
+
+    def analog_out_node_enable_set(self, channel, node, enable):
+        """ Enables or disables the channel node specified by idxChannel and node. The Carrier node enables or
+        disables the channel and AM/FM the modulation. With channel index -1, each Analog Out channel enable will be
+        configured to use the same, new option.
+
+        Parameters
+        ----------
+        channel : int
+        node : AnalogOutNode
+        enable : int
+        """
+        dwf.FDwfAnalogOutNodeEnableSet(self.hdwf, c_int(channel), node.__value, c_int(enable))
+
+    def analog_out_enable_get(self, channel, node):
+        enable = c_int()
+        dwf.FDwfAnalogOutNodeEnableGet(self.hdwf, c_int(channel), node.__value, byref(enable))
+        return enable.value
+
+    def analog_out_node_function_info(self, channel, node):
+        info = c_int()
+        dwf.FDwfAnalogOutNodeFunctionInfo(self.hdwf, c_int(channel), node.__value, byref(info))
+        return info.value
+
+    def analog_out_node_function_set(self, channel, node, func):
+        """ Sets the generator output function for the specified instrument channel. With channel index -1,
+        each enabled Analog Out channel function will be configured to use the same, new option.
+
+        Parameters
+        ----------
+        channel : int
+        node : AnalogChannelNodeType
+        func : AnalogOutSignalType
+        """
+        dwf.FDwfAnalogOutNodeFunctionSet(self.hdwf, c_int(channel), node.__value, func.__value)
+
+    def analog_out_node_function_get(self, channel, node):
+        func = c_ubyte()
+        dwf.FDwfAnalogOutNodeFunctionGet(self.hdwf, c_int(channel), node.__value, byref(func))
+        return AnalogOutSignalType(func)
+
+    def analog_out_node_frequency_info(self, channel, node):
+        min_freq = c_double()
+        max_freq = c_double()
+        dwf.FDwfAnalogOutNodeFrequencyInfo(self.hdwf, c_int(channel), node.__value, byref(min_freq), byref(max_freq))
+        return min_freq.value, max_freq.value
+
+    def analog_out_node_frequency_set(self, channel, node, frequency):
+        dwf.FDwfAnalogOutNodeFrequencySet(self.hdwf, c_int(channel), node.__value, c_double(frequency))
+
+    def analog_out_node_frequency_get(self, channel, node):
+        frequency = c_double()
+        dwf.FDwfAnalogOutNodeFrequencyGet(self.hdwf, c_int(channel), node.__value, byref(frequency))
+        return frequency.value
+
+    def analog_out_node_amplitude_info(self, channel, node):
+        v_min = c_double()
+        v_max = c_double()
+        dwf.FDwfAnalogOutNodeAmplitudeInfo(self.hdwf, c_int(channel), node.__value, byref(v_min), byref(v_max))
+        return v_min.value, v_max.value
+
+    def analog_out_node_amplitude_set(self, channel, node, amplitude):
+        dwf.FDwfAnalogOutNodeAmplitudeSet(self.hdwf, c_int(channel), node.__value, c_double(amplitude))
+
+    def analog_out_node_amplitude_get(self, channel, node):
+        amplitude = c_double()
+        dwf.FDwfAnalogOutNodeAmplitudeGet(c_int(channel), node.__value, byref(amplitude))
+        return amplitude.value
+
+    def analog_out_node_offset_info(self, channel, node):
+        min_offset = c_double()
+        max_offset = c_double()
+        dwf.FDwfAnalogOutNodeOffsetInfo(self.hdwf, c_int(channel), node.__value, byref(min_offset), byref(max_offset))
+        return min_offset.value, max_offset.value
+
+    def analog_out_node_offset_set(self, channel, node, offset):
+        dwf.FDwfAnalogOutNodeOffsetSet(self.hdwf, c_int(channel), node.__value, c_double(offset))
+
+    def analog_out_node_offset_get(self, channel, node):
+        offset = c_double()
+        dwf.FDwfAnalogOutNodeOffsetGet(self.hdwf, c_int(channel), node.__value, byref(offset))
+        return offset.value
+
+    
