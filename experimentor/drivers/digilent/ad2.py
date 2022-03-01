@@ -338,7 +338,7 @@ class AnalogDiscovery:
         dwf.FDwfAnalogInAcquisitionModeInfo(self.hdwf, byref(mode))
         return mode
 
-    def analong_in_acquisition_mode_set(self, mode):
+    def analog_in_acquisition_mode_set(self, mode):
         """
 
         Parameters
@@ -1132,4 +1132,7 @@ class AnalogDiscovery:
         dwf.FDwfAnalogOutNodeOffsetGet(self.hdwf, c_int(channel), node.__value, byref(offset))
         return offset.value
 
+    def close(self):
+        dwf.FDwfDeviceClose(self.hdwf)
+        return
     
