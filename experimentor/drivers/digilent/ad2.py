@@ -68,16 +68,16 @@ class AnalogDiscovery:
     def analog_in_reset(self):
         dwf.FDwfAnalogInReset(self.hdwf)
 
-    def analog_in_configure(self, reconfigure=1, start=1):
-        dwf.FDwfAnalogInConfigure(self.hdwf, c_int(reconfigure), c_int(start))
+    def analog_in_configure(self, reconfigure=True, start=True):
+        dwf.FDwfAnalogInConfigure(self.hdwf, c_bool(reconfigure), c_bool(start))
 
-    def analog_in_status(self, read_data=0):
+    def analog_in_status(self, read_data=False):
         """ Checks the status of the acquisition
 
         Parameters
         ----------
-        read_data : int
-            0 or 1, to indicate whether data should be read from the device
+        read_data : bool
+           to indicate whether data should be read from the device
 
         Returns
         -------
@@ -85,7 +85,7 @@ class AnalogDiscovery:
             The instrument state
         """
         state = c_ubyte()
-        dwf.FDwfAnalogInStatus(self.hdwf, c_int(read_data), byref(state))
+        dwf.FDwfAnalogInStatus(self.hdwf, c_bool(read_data), byref(state))
         return InstrumentState(state)
 
     def analog_in_samples_left(self):
