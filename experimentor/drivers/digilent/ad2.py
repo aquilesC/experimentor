@@ -14,6 +14,7 @@ common for a Python developer.
 This driver is not aimed at being exhaustive but rather focused on the objectives at hand, namely using the analog
 acquisition synchronized via an external trigger (which can also be on the board itself).
 """
+import ctypes
 import sys
 from ctypes import byref, c_bool, c_byte, c_double, c_int, c_ubyte, c_uint, cdll, create_string_buffer
 
@@ -22,7 +23,7 @@ import numpy as np
 from experimentor.drivers.digilent.dwfconst import AcquisitionMode, AnalogAcquisitionFilter, AnalogChannelNodeType, \
     AnalogInTriggerMode, \
     AnalogOutNode, AnalogOutSignalType, DigitalOutIdle, DigitalOutOutput, DigitalOutType, InstrumentState, \
-    TriggerLength, TriggerSlope, TriggerSource
+    TriggerLength, TriggerSlope, TriggerSource, DeviceFilter
 from experimentor.drivers.exceptions import DriverException
 from experimentor.lib.log import get_logger
 
@@ -58,12 +59,18 @@ class AnalogDiscovery:
             If the device can't be opened
         """
 
+        device_count = ctypes.c_int()
+        dwf.FDwfEnum(DeviceFilter.All, ctypes.byref(device_count))
+        if device_count.value == 0:
+            raise DriverException("There are no DAQs connected to the computer")
+
         dwf.FDwfDeviceOpen(c_int(dev_num), byref(self.hdwf))
 
         if self.hdwf.value == 0:
             szerr = create_string_buffer(512)
             dwf.FDwfGetLastErrorMsg(szerr)
             raise DriverException(str(szerr.value))
+        logger.info('DAQ initialized')
 
     def analog_in_reset(self):
         dwf.FDwfAnalogInReset(self.hdwf)
