@@ -68,7 +68,7 @@ class AnalogDiscovery:
     def analog_in_reset(self):
         dwf.FDwfAnalogInReset(self.hdwf)
 
-    def analog_in_configure(self, reconfigure=True, start=True):
+    def analog_in_configure(self, reconfigure=False, start=False):
         dwf.FDwfAnalogInConfigure(self.hdwf, c_bool(reconfigure), c_bool(start))
 
     def analog_in_status(self, read_data=False):
@@ -345,7 +345,7 @@ class AnalogDiscovery:
         ----------
         mode : AcquisitionMode
         """
-        dwf.FDwfAnalogInAcquisitionModeSet(self.hdwf, mode._value)
+        dwf.FDwfAnalogInAcquisitionModeSet(self.hdwf, mode)
 
     def analog_in_acquisition_mode_get(self):
         """
@@ -366,7 +366,7 @@ class AnalogDiscovery:
         ----------
         source : TriggerSource
         """
-        dwf.FDwfAnalogInSamplingSourceSet(self.hdwf, source._value)
+        dwf.FDwfAnalogInSamplingSourceSet(self.hdwf, source)
 
     def analog_in_sampling_source_get(self):
         source = c_int()
@@ -380,7 +380,7 @@ class AnalogDiscovery:
         ----------
         slope : TriggerSlope
         """
-        dwf.FDwfAnalogInSamplingSlopeSet(self.hdwf, slope._value)
+        dwf.FDwfAnalogInSamplingSlopeSet(self.hdwf, slope)
 
     def analog_in_sampling_slope_get(self):
         slope = c_int()
@@ -429,7 +429,7 @@ class AnalogDiscovery:
         return filter
 
     def analog_in_channel_filter_set(self, channel, filter):
-        dwf.FDwfAnalogInChannelFilterSet(self.hdwf, c_int(channel), filter._value)
+        dwf.FDwfAnalogInChannelFilterSet(self.hdwf, c_int(channel), filter)
 
     def analog_in_channel_filter_get(self, channel):
         filter = c_int()
@@ -491,7 +491,7 @@ class AnalogDiscovery:
         return attenuation.value
 
     def analog_in_trigger_source_set(self, source):
-        dwf.FDwfAnalogInTriggerSourceSet(self.hdwf, source._value)
+        dwf.FDwfAnalogInTriggerSourceSet(self.hdwf, source)
 
     def analog_in_trigger_source_get(self):
         source = c_int()
@@ -567,7 +567,7 @@ class AnalogDiscovery:
         return holdoff.value
 
     def analog_in_trigger_type_set(self, trig_type):
-        dwf.FDwfAnalogInTriggerTypeSet(self.hdwf, trig_type._value)
+        dwf.FDwfAnalogInTriggerTypeSet(self.hdwf, trig_type)
 
     def analog_in_trigger_type_get(self):
         trig_type = c_int()
@@ -597,7 +597,7 @@ class AnalogDiscovery:
         return filter_info.value
 
     def analog_in_trigger_filter_set(self, trig_filter):
-        dwf.FDwfAnalogInTriggerFilterSet(self.hdwf, trig_filter._value)
+        dwf.FDwfAnalogInTriggerFilterSet(self.hdwf, trig_filter)
 
     def analog_in_trigger_filter_get(self):
         trig_filter = c_int()
@@ -631,7 +631,7 @@ class AnalogDiscovery:
         return info.value
 
     def analog_in_trigger_condition_set(self, condition):
-        dwf.FDwfAnalogInTriggerConditionSet(self.hdwf, condition._value)
+        dwf.FDwfAnalogInTriggerConditionSet(self.hdwf, condition)
 
     def analog_in_trigger_condition_get(self):
         condition = c_int()
@@ -691,7 +691,7 @@ class AnalogDiscovery:
         return condition.value
 
     def analog_in_trigger_length_condition_set(self, length):
-        dwf.FDwfAnalogInTriggerLengthConditionSet(self.hdwf, length._value)
+        dwf.FDwfAnalogInTriggerLengthConditionSet(self.hdwf, length)
 
     def analog_in_trigger_length_condition_hysteresis_get(self):
         length = c_double()
@@ -735,7 +735,7 @@ class AnalogDiscovery:
         return frequency.value
 
     def digital_out_trigger_source_set(self, source):
-        dwf.FDwfDigitalOutTriggerSourceSet(self.hdwf, source._value)
+        dwf.FDwfDigitalOutTriggerSourceSet(self.hdwf, source)
 
     def digital_out_trigger_source_get(self):
         source = c_ubyte()
@@ -743,7 +743,7 @@ class AnalogDiscovery:
         return TriggerSource(source)
 
     def digital_out_trigger_slope_set(self, slope):
-        dwf.FDwfDigitalOutTriggerSlopeSet(self.hdwf, slope._value)
+        dwf.FDwfDigitalOutTriggerSlopeSet(self.hdwf, slope)
 
     def digital_out_trigger_slope_get(self):
         slope = c_int()
@@ -844,7 +844,7 @@ class AnalogDiscovery:
         return out_output.value
 
     def digital_out_output_set(self, channel, output):
-        dwf.FDwfDigitalOutOutputSet(self.hdwf, c_int(channel), output._value)
+        dwf.FDwfDigitalOutOutputSet(self.hdwf, c_int(channel), output)
 
     def digital_out_output_get(self, channel):
         output = c_int()
@@ -867,7 +867,7 @@ class AnalogDiscovery:
         return info.value
 
     def digital_out_type_set(self, channel, out_type):
-        dwf.FDwfDigitalOutTypeSet(self.hdwf, c_int(channel), out_type._value)
+        dwf.FDwfDigitalOutTypeSet(self.hdwf, c_int(channel), out_type)
 
     def digital_out_type_get(self, channel):
         out_type = c_int()
@@ -889,7 +889,7 @@ class AnalogDiscovery:
         return info.value
 
     def digital_out_idle_set(self, channel, idle):
-        dwf.FDwfDigitalOutIdleSet(self.hdwf, channel, idle._value)
+        dwf.FDwfDigitalOutIdleSet(self.hdwf, channel, idle)
 
     def digital_out_idle_get(self, channel):
         idle = c_int()

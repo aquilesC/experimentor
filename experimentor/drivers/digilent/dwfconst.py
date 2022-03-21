@@ -45,6 +45,10 @@ class BaseConst:
     def __init__(self, value):
         self._value = value
 
+    @property
+    def value(self):
+        return self._value
+
     def __str__(self):
         for k in dir(self):
             if not k.startswith('_'):
@@ -63,7 +67,7 @@ class BaseConst:
 
 # device handle
 # HDWF
-class DeviceHande:
+class DeviceHandle:
     none = c_int(0)
 
 
