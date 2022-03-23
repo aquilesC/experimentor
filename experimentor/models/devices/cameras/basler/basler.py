@@ -426,10 +426,7 @@ class BaslerCamera(BaseCamera):
         while self.continuous_reads_running:
             time.sleep(.1)
 
-        self.clean_up_threads()
-        if len(self._threads) > 1:
-            self.logger.warning(f'Finalizing {self} but there are still threads running')
-        super().finalize()
+        super(BaslerCamera, self).finalize()
         self.finalized = True
 
 
