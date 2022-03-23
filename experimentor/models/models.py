@@ -216,7 +216,7 @@ class BaseModel(metaclass=MetaModel):
         finalize methods (they get called automatically), and either close the publisher explicitly or use this method.
         """
         self._publisher.close()
-
+        self.clean_up_threads()
 
 class ProxyObject:
     """Creates an object that can run on a separate process. It uses pipes to exchange information in and out. This is
