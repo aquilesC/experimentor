@@ -16,6 +16,7 @@ import numpy as np
 
 import zmq
 
+from experimentor.lib.log import get_logger
 from experimentor.models.meta import MetaModel
 
 
@@ -57,6 +58,7 @@ class BaseModel(metaclass=MetaModel):
         self._threads = []
         self._ctx = self.create_context()
         self._publisher = self.create_publisher()
+        self.logger = get_logger()
 
     def create_context(self):
         """ Creates the ZMQ context. In case of wanting to use a specific context (perhaps globally defined), overwrite
@@ -193,7 +195,9 @@ class BaseModel(metaclass=MetaModel):
     def clean_up_threads(self):
         """ Keep only the threads that are alive.
         """
+        self.logger.debug(f'{self} - Starting clean up threads. There are {len(self._threads)} now.')
         self._threads = [thread for thread in self._threads if thread[1].is_alive()]
+        self.logger.info(f'{self} - Cleaned up threads. There are {len(self._threads)} alive.')
 
     @property
     def subscribers(self):
@@ -217,6 +221,8 @@ class BaseModel(metaclass=MetaModel):
         """
         self._publisher.close()
         self.clean_up_threads()
+        if len(self._threads):
+            self.logger.warning(f'There are {len(self._threads)} still alive in {self}')
 
 class ProxyObject:
     """Creates an object that can run on a separate process. It uses pipes to exchange information in and out. This is

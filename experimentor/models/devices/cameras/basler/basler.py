@@ -387,6 +387,7 @@ class BaslerCamera(BaseCamera):
         self.keep_reading = False
         while self.continuous_reads_running:
             time.sleep(.1)
+        self.logger.info(f'{self} - Stopped continuous reads')
 
     def start_free_run(self):
         """ Starts a free run from the camera. It will preserve only the latest image. It depends
@@ -415,13 +416,26 @@ class BaslerCamera(BaseCamera):
     def stop_camera(self):
         self._driver.StopGrabbing()
 
+    def configure_DIO(self):
+        """Configures the Digital input-output of the camera based on a simple configuration dictionary that should be
+        stored on the config parameters of the camera.
+        """
+        self.logger.info(f"{self} - Configure Digital input output")
+        DIO = self.initial_config['DIO']
+        for settings in DIO:
+            self.logger.debug(settings)
+            self._driver.LineSelector.SetValue(DIO[settings]['line'])
+            self._driver.LineMode.SetValue(DIO[settings]['mode'])
+            self._driver.LineSource.SetValue(DIO[settings]['source'])
+
     def finalize(self):
+        self.logger.info(f'Finalizing camera {self}')
         if self.finalized:
             return
 
-        self.keep_reading = False
-        self.stop_free_run()
         self.stop_continuous_reads()
+        self.stop_free_run()
+
         self.stop_camera()
         while self.continuous_reads_running:
             time.sleep(.1)

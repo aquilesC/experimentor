@@ -9,7 +9,7 @@ widgets, dialogs, etc.
 
 from logging import warning
 
-
+from experimentor.lib.log import get_logger
 from experimentor.models.action import Action
 from experimentor.views import try_except_dialog
 
@@ -17,6 +17,10 @@ from experimentor.views import try_except_dialog
 class BaseView:
     """ Base class to homogenize what views are expected to do through the entire program cycle.
     """
+    def __init__(self):
+        self.logger = get_logger()
+        self.logger.debug('Base View init')
+
     def connect_to_action(self, signal, action):
         if not isinstance(action, Action):
             warning(f'{action} is not an Action, consider using {signal}.connect instead')

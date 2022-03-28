@@ -261,15 +261,17 @@ class Experiment(BaseExperiment):
         """ Needs to be overridden by child classes.
         """
         self.logger.info(f'Going to finalize {len(self.subscribers)} subscribers')
-        for subscriber in self.subscribers:
-            subscriber.stop()
-            while subscriber.is_alive():
-                sleep(0.001)
-            logger.info(f'Finalized {subscriber}')
+
+        if len(self.subscribers) > 0:
+            for subscriber in self.subscribers:
+                subscriber.stop()
+                while subscriber.is_alive():
+                    sleep(0.001)
+                self.logger.info(f'Finalized {subscriber}')
 
         self.clean_up_threads()
         for thread in self.list_alive_threads:
-            logger.debug(f'{thread} is alive when finalizing')
+            self.logger.debug(f'{thread} is alive when finalizing')
 
         self.is_alive = False
 
