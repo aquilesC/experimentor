@@ -224,7 +224,6 @@ class BaslerCamera(BaseCamera):
         else:
             self.logger.warning(f'Trying to set pixel_format to {mode}, which is not valid')
 
-
     @Feature()
     def width(self):
         return self._driver.Width.Value
