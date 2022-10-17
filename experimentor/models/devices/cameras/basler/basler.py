@@ -415,18 +415,6 @@ class BaslerCamera(BaseCamera):
     def stop_camera(self):
         self._driver.StopGrabbing()
 
-    def configure_DIO(self):
-        """Configures the Digital input-output of the camera based on a simple configuration dictionary that should be
-        stored on the config parameters of the camera.
-        """
-        self.logger.info(f"{self} - Configure Digital input output")
-        DIO = self.initial_config['DIO']
-        for settings in DIO:
-            self.logger.debug(settings)
-            self._driver.LineSelector.SetValue(DIO[settings]['line'])
-            self._driver.LineMode.SetValue(DIO[settings]['mode'])
-            self._driver.LineSource.SetValue(DIO[settings]['source'])
-
     def finalize(self):
         self.logger.info(f'Finalizing camera {self}')
         if self.finalized:
