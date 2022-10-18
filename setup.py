@@ -20,7 +20,7 @@ setup(
     author_email='aquiles@pythonforthelab.com',
     description='Basic building blocks for controlling complex setups',
     install_requires=[
-        'pint',
+        'pint==0.18',
         'numpy',
     ],
     python_requires='>=3.8',
